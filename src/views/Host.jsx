@@ -1,16 +1,38 @@
+import { useState, useEffect } from "react"
 import { useSala } from "../hooks/useSala"
 import { CONFIG } from "../data/actividad.config"
+import { db } from "../config/firebase"
+import { ref, update } from "firebase/database"
 import { QRCodeSVG as QRCode } from "qrcode.react"
 import { ReflexionHost } from "../phases/Reflexion"
 import { InstrumentoHost } from "../phases/Instrumento"
 import { Ronda1Host } from "../phases/Ronda1"
 import { Ronda2Host } from "../phases/Ronda2"
 import { Ronda3Host } from "../phases/Ronda3"
-import { LeaderboardHost } from "../phases/Leaderboard"
+import { LeaderboardHost, LeaderboardParcial } from "../phases/Leaderboard"
 import { EvaluacionHost } from "../phases/Evaluacion"
+import { PreFaseHost } from "../phases/PreFase"
+
+const FASES_CON_PREFASE = [
+  "juego_ronda1",
+  "juego_ronda2",
+  "juego_ronda3",
+]
 
 export default function Host() {
   const { sala, cargando, iniciarSala, siguienteFase, faseAnterior, resetSala, activarReflexion, avanzarSocializacion } = useSala()
+  const [enPrefase, setEnPrefase] = useState(false)
+  const [fasePrevia, setFasePrevia] = useState(null)
+
+  useEffect(() => {
+    if (sala?.fase && FASES_CON_PREFASE.includes(sala.fase)) {
+      setEnPrefase(true)
+      setFasePrevia(sala.fase)
+      update(ref(db, "sala"), { prefase_activa: true })
+    } else {
+      setEnPrefase(false)
+    }
+  }, [sala?.fase])
 
   if (cargando) return <Cargando />
 
@@ -24,11 +46,58 @@ export default function Host() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gray-950 text-white font-sans">
+  async function handlePrefaseLista() {
+    await update(ref(db, "sala"), { prefase_activa: false })
+    setEnPrefase(false)
+  }
 
-      {/* Barra de control del anfitrión */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 px-6 py-3 flex items-center justify-between z-50">
+  return (
+    <div className="h-screen bg-gray-950 text-white font-sans flex flex-col">
+
+      {/* Contenido por fase — scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        {enPrefase ? (
+          <PreFaseHost fase={fasePrevia} onListo={handlePrefaseLista} />
+        ) : (
+          <>
+            {(!sala || sala.fase === undefined) && <PantallaInicio />}
+            {sala?.fase === "lobby" && <PantallaLobby participantes={participantes} />}
+            {sala?.fase === "reflexion" && <ReflexionHost onActivar={activarReflexion} />}
+            {sala?.fase === "instrumento" && <InstrumentoHost onAvanzar={avanzarSocializacion} />}
+            {sala?.fase === "juego_ronda1" && <Ronda1Host />}
+            {sala?.fase === "leaderboard_parcial_1" && (
+              <LeaderboardParcial
+                titulo="🏆 Resultados — Ronda 1"
+                subtitulo="¿Conoces a los colombianos famosos?"
+                onSiguiente={() => update(ref(db, "sala"), { fase: "juego_ronda2" })}
+                labelBoton="Continuar a Ronda 2 →"
+              />
+            )}
+            {sala?.fase === "juego_ronda2" && <Ronda2Host />}
+            {sala?.fase === "leaderboard_parcial_2" && (
+              <LeaderboardParcial
+                titulo="🏆 Resultados — Ronda 2"
+                subtitulo="¿Reconoces los lugares de Colombia?"
+                onSiguiente={() => update(ref(db, "sala"), { fase: "juego_ronda3" })}
+                labelBoton="Continuar a Ronda 3 →"
+              />
+            )}
+            {sala?.fase === "juego_ronda3" && <Ronda3Host />}
+            {sala?.fase === "leaderboard" && <LeaderboardHost />}
+            {sala?.fase === "evaluacion" && <EvaluacionHost />}
+            {sala?.fase === "fin" && (
+              <div className="h-full flex flex-col items-center justify-center gap-6">
+                <div className="text-7xl">🎉</div>
+                <h2 className="text-4xl font-bold text-yellow-400">¡Actividad finalizada!</h2>
+                <p className="text-gray-400 text-xl">Gracias a todos por participar</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Barra de control — pegada al fondo, no fixed */}
+      <div className="h-16 bg-gray-900 border-t border-gray-800 px-6 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           {sala?.fase !== undefined && (
             <button
@@ -38,12 +107,12 @@ export default function Host() {
               ↺ Reiniciar
             </button>
           )}
-          <span className="text-gray-400 text-sm">Fase actual:</span>
+          <span className="text-gray-400 text-sm">Fase:</span>
           <span className="bg-yellow-400 text-gray-950 text-sm font-bold px-3 py-1 rounded-full">
             {sala?.fase ?? "—"}
           </span>
           <span className="text-gray-500 text-sm">
-            👥 {participantes.length} participante{participantes.length !== 1 ? "s" : ""}
+            👥 {participantes.length}
           </span>
         </div>
         <div className="flex gap-3">
@@ -72,83 +141,56 @@ export default function Host() {
           )}
         </div>
       </div>
-
-      {/* Contenido por fase */}
-      <div className="pb-20">
-        {(!sala || sala.fase === undefined) && <PantallaInicio onIniciar={iniciarSala} />}
-        {sala?.fase === "lobby" && <PantallaLobby participantes={participantes} />}
-        {sala?.fase === "reflexion" && <ReflexionHost onActivar={activarReflexion} />}
-        {sala?.fase === "instrumento" && <InstrumentoHost onAvanzar={avanzarSocializacion} />}
-        {sala?.fase === "juego_ronda1" && <Ronda1Host />}
-        {sala?.fase === "juego_ronda2" && <Ronda2Host />}
-        {sala?.fase === "juego_ronda3" && <Ronda3Host />}
-        {sala?.fase === "leaderboard" && <LeaderboardHost />}
-        {sala?.fase === "evaluacion" && <EvaluacionHost />}
-        {sala?.fase === "fin" && (
-          <div className="min-h-screen flex flex-col items-center justify-center gap-6">
-            <div className="text-7xl">🎉</div>
-            <h2 className="text-4xl font-bold text-yellow-400">¡Actividad finalizada!</h2>
-            <p className="text-gray-400 text-xl">Gracias a todos por participar</p>
-          </div>
-        )}
-      </div>
     </div>
   )
 }
 
-function PantallaInicio({ onIniciar }) {
+function PantallaInicio() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-10 py-12 gap-10">
+    <div className="h-full flex flex-col items-center justify-center px-10 py-6 gap-6">
       <div className="text-center">
-        <h1 className="text-5xl font-bold text-yellow-400 tracking-tight">
+        <h1 className="text-4xl font-bold text-yellow-400 tracking-tight">
           {CONFIG.titulo}
         </h1>
-        <p className="text-gray-400 mt-2 text-lg">Actividad de Conjunto</p>
+        <p className="text-gray-400 mt-1 text-base">Actividad de Conjunto</p>
       </div>
 
-      <div className="w-full max-w-5xl grid grid-cols-2 gap-8">
-        <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
-          <h2 className="text-2xl font-bold text-blue-400 mb-6">📋 Agenda</h2>
-          <ol className="flex flex-col gap-4">
+      <div className="w-full max-w-5xl grid grid-cols-2 gap-6">
+        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+          <h2 className="text-xl font-bold text-blue-400 mb-4">📋 Agenda</h2>
+          <ol className="flex flex-col gap-3">
             {CONFIG.agenda.map((item, i) => (
-              <li key={i} className="flex items-start gap-4">
-                <span className="text-2xl">{item.icono}</span>
+              <li key={i} className="flex items-start gap-3">
+                <span className="text-xl">{item.icono}</span>
                 <div className="w-full text-left">
-                  <span className="text-gray-200 font-medium text-lg">{item.item}</span>
+                  <span className="text-gray-200 font-medium">{item.item}</span>
                 </div>
               </li>
             ))}
           </ol>
         </div>
 
-        <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
-          <h2 className="text-2xl font-bold text-green-400 mb-6">🎯 Evidencias de Aprendizaje</h2>
-          <ol className="flex flex-col gap-5">
+        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+          <h2 className="text-xl font-bold text-green-400 mb-4">🎯 Evidencias de Aprendizaje</h2>
+          <ol className="flex flex-col gap-3">
             {CONFIG.evidencias.map((ev, i) => (
-              <li key={i} className="flex items-start gap-4">
-                <span className="bg-green-500 text-white text-sm font-bold rounded-full w-7 h-7 flex items-center justify-center shrink-0 mt-0.5">
+              <li key={i} className="flex items-start gap-3">
+                <span className="bg-green-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5">
                   {i + 1}
                 </span>
-                <p className="text-gray-300 leading-relaxed">{ev}</p>
+                <p className="text-gray-300 text-sm leading-relaxed">{ev}</p>
               </li>
             ))}
           </ol>
         </div>
       </div>
-
-      <button
-        onClick={onIniciar}
-        className="mt-4 bg-yellow-400 hover:bg-yellow-300 text-gray-950 font-bold text-xl px-12 py-4 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-yellow-400/30 hover:scale-105"
-      >
-        Iniciar actividad →
-      </button>
     </div>
   )
 }
 
 function PantallaLobby({ participantes }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-10 px-10 py-12">
+    <div className="h-full flex flex-col items-center justify-center gap-10 px-10 py-12">
       <div className="text-center">
         <h2 className="text-4xl font-bold text-yellow-400">¡Es hora de jugar!</h2>
         <p className="text-gray-400 mt-2 text-xl">
@@ -207,20 +249,9 @@ function PantallaLobby({ participantes }) {
   )
 }
 
-function PlaceholderFase({ titulo }) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-4xl font-bold text-white">{titulo}</h2>
-        <p className="text-gray-500 mt-3">Esta fase se implementará próximamente</p>
-      </div>
-    </div>
-  )
-}
-
 function Cargando() {
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+    <div className="h-full bg-gray-950 flex items-center justify-center">
       <p className="text-white text-xl animate-pulse">Conectando con Firebase...</p>
     </div>
   )
