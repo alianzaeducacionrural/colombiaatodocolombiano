@@ -91,7 +91,8 @@ export const CONFIG = {
       descripcion: "Adivina el lugar antes de que se revele la imagen",
       tipo: "zoom",
       puntosPorNivel: [1000, 600, 300],
-      tiempoPorNivel: 8,
+      tiempoPorNivel: 5,
+      tiempoTotal: 15,
       preguntas: [
         {
           imagen: "/colombiaatodocolombiano/imagenes/cano-cristales.jpg",

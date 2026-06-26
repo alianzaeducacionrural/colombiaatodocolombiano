@@ -18,7 +18,7 @@ export function Ronda2Host() {
   const [fase, setFase] = useState("jugando") // "jugando" | "resultado"
   const [respuestas, setRespuestas] = useState({})
   const [participantes, setParticipantes] = useState({})
-  const [timerNivel, setTimerNivel] = useState(ronda.tiempoPorNivel)
+  const [tiempoGlobal, setTiempoGlobal] = useState(ronda.tiempoTotal)
   const timerRef = useRef(null)
   const resueltoRef = useRef(false)
 
@@ -40,14 +40,14 @@ export function Ronda2Host() {
     return () => unsub()
   }, [preguntaIdx])
 
-  // Arrancar pregunta — revelar niveles automáticamente
+  // Arrancar pregunta — timer global de 15s, revela nivel cada 5s
   useEffect(() => {
     resueltoRef.current = false
     setNivel(0)
+    setTiempoGlobal(ronda.tiempoTotal)
     setFase("jugando")
     setRespuestas({})
 
-    // Escribir estado inicial en Firebase
     update(ref(db, "sala/ronda2_estado"), {
       preguntaIdx,
       nivel: 0,
@@ -56,36 +56,30 @@ export function Ronda2Host() {
       puntos: ronda.puntosPorNivel[0],
     })
 
-    // Revelar nivel 1 → 2 → 3 automáticamente cada 8 segundos
-    let nivelActual = 0
+    let seg = 0
     timerRef.current = setInterval(() => {
-      nivelActual += 1
-      if (nivelActual >= NIVELES.length) {
+      seg++
+      setTiempoGlobal(ronda.tiempoTotal - seg)
+
+      if (seg % ronda.tiempoPorNivel === 0) {
+        const nuevoNivel = Math.min(seg / ronda.tiempoPorNivel, NIVELES.length - 1)
+        setNivel(nuevoNivel)
+        update(ref(db, "sala/ronda2_estado"), {
+          nivel: nuevoNivel,
+          puntos: ronda.puntosPorNivel[nuevoNivel],
+        })
+      }
+
+      if (seg >= ronda.tiempoTotal) {
         clearInterval(timerRef.current)
-        // Tiempo agotado — mostrar resultado
         update(ref(db, "sala/ronda2_estado"), { abierto: false })
         calcularPuntos()
         setFase("resultado")
-        return
       }
-      setNivel(nivelActual)
-      update(ref(db, "sala/ronda2_estado"), {
-        nivel: nivelActual,
-        puntos: ronda.puntosPorNivel[nivelActual],
-      })
-    }, ronda.tiempoPorNivel * 1000)
+    }, 1000)
 
     return () => clearInterval(timerRef.current)
   }, [preguntaIdx])
-
-  // Timer de cuenta regresiva del nivel actual (se reinicia al cambiar nivel o pregunta)
-  useEffect(() => {
-    setTimerNivel(ronda.tiempoPorNivel)
-    const tick = setInterval(() => {
-      setTimerNivel(t => Math.max(0, t - 1))
-    }, 1000)
-    return () => clearInterval(tick)
-  }, [nivel, preguntaIdx])
 
   // Si todos respondieron, mostrar resultado automáticamente
   useEffect(() => {
@@ -123,13 +117,6 @@ export function Ronda2Host() {
     }
   }
 
-  async function mostrarResultado() {
-    clearInterval(timerRef.current)
-    await update(ref(db, "sala/ronda2_estado"), { abierto: false })
-    await calcularPuntos()
-    setFase("resultado")
-  }
-
   async function siguientePregunta() {
     await set(ref(db, "sala/ronda2_estado"), null)
     setPreguntaIdx(preguntaIdx + 1)
@@ -164,9 +151,17 @@ export function Ronda2Host() {
                 </span>
               ))}
             </div>
-            <span className={`text-4xl font-black ${timerNivel <= 3 ? "text-red-400" : "text-yellow-400"}`}>
-              {timerNivel}s
-            </span>
+            <div className="w-full max-w-xs">
+              <div className="w-full bg-gray-800 rounded-full h-3">
+                <div
+                  className="bg-yellow-400 h-3 rounded-full transition-all duration-1000"
+                  style={{ width: `${(tiempoGlobal / ronda.tiempoTotal) * 100}%` }}
+                />
+              </div>
+              <p className={`text-right text-sm font-bold mt-1 ${tiempoGlobal <= 5 ? "text-red-400" : "text-yellow-400"}`}>
+                {tiempoGlobal}s
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -261,14 +256,6 @@ export function Ronda2Host() {
           )}
 
           {/* Botones */}
-          {fase === "jugando" && (
-            <button
-              onClick={mostrarResultado}
-              className="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-xl transition text-sm"
-            >
-              Revelar resultado ahora
-            </button>
-          )}
           {fase === "resultado" && !esUltima && (
             <button
               onClick={siguientePregunta}
@@ -296,7 +283,7 @@ export function Ronda2Player({ userId, nombre }) {
   const [estado, setEstado] = useState(null)
   const [seleccion, setSeleccion] = useState(null)
   const [enviado, setEnviado] = useState(false)
-  const [timerNivel, setTimerNivel] = useState(8)
+  const [timerNivel, setTimerNivel] = useState(ronda.tiempoTotal)
   const timerRef = useRef(null)
 
   useEffect(() => {
@@ -311,10 +298,12 @@ export function Ronda2Player({ userId, nombre }) {
     return () => unsub()
   }, [estado?.preguntaIdx])
 
-  // Timer por nivel sincronizado con estado.nivel
+  // Timer global sincronizado con estado.inicio
   useEffect(() => {
     if (!estado?.abierto) return
-    setTimerNivel(ronda.tiempoPorNivel)
+    const transcurrido = Math.floor((Date.now() - estado.inicio) / 1000)
+    const restante = Math.max(0, ronda.tiempoTotal - transcurrido)
+    setTimerNivel(restante)
     clearInterval(timerRef.current)
     timerRef.current = setInterval(() => {
       setTimerNivel(t => {
@@ -323,7 +312,7 @@ export function Ronda2Player({ userId, nombre }) {
       })
     }, 1000)
     return () => clearInterval(timerRef.current)
-  }, [estado?.nivel, estado?.abierto])
+  }, [estado?.abierto])
 
   async function handleSeleccion(idx) {
     if (enviado || !estado?.abierto) return
@@ -393,7 +382,7 @@ export function Ronda2Player({ userId, nombre }) {
         <span className={`text-5xl font-black ${timerNivel <= 3 ? "text-red-400" : "text-yellow-400"}`}>
           {timerNivel}s
         </span>
-        <p className="text-gray-500 text-xs mt-1">para el siguiente nivel</p>
+        <p className="text-gray-500 text-xs mt-1">segundos restantes</p>
       </div>
 
       {/* Opciones */}
