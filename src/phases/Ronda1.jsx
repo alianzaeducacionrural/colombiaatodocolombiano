@@ -45,6 +45,15 @@ export function Ronda1Host() {
     return () => unsub()
   }, [preguntaIdx])
 
+  // Auto-revelar cuando todos respondieron
+  useEffect(() => {
+    const total = Object.keys(participantes).length
+    const respondieron = Object.keys(respuestas).length
+    if (total > 0 && respondieron >= total && fase === "respondiendo") {
+      mostrarResultado()
+    }
+  }, [respuestas, participantes, fase])
+
   // Timer: arranca al cambiar de pregunta; al llegar a 0 → resultado
   useEffect(() => {
     resueltoRef.current = false
@@ -125,7 +134,7 @@ export function Ronda1Host() {
   const totalRespondieron = Object.keys(respuestas).length
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-10 py-12">
+    <div className="h-full flex flex-col items-center justify-center gap-6 px-10 py-12">
 
       {/* Header */}
       <div className="text-center">
@@ -231,10 +240,10 @@ export function Ronda1Host() {
         )}
         {fase === "resultado" && esUltima && (
           <button
-            onClick={() => update(ref(db, "sala"), { fase: "juego_ronda2" })}
+            onClick={() => update(ref(db, "sala"), { fase: "leaderboard_parcial_1" })}
             className="bg-green-500 hover:bg-green-400 text-white font-bold px-8 py-3 rounded-xl transition"
           >
-            Ir a Ronda 2 →
+            Ver resultados parciales →
           </button>
         )}
       </div>
@@ -292,7 +301,7 @@ export function Ronda1Player({ userId, nombre, enviarRespuesta }) {
   // Ya respondió
   if (enviado) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
         <div className="text-5xl">✅</div>
         <h2 className="text-2xl font-bold text-yellow-400">¡Respondiste!</h2>
         <div className="bg-gray-900 border border-gray-800 rounded-2xl px-8 py-4">
@@ -310,7 +319,7 @@ export function Ronda1Player({ userId, nombre, enviarRespuesta }) {
   const pregunta = ronda.preguntas[estado?.preguntaIdx ?? 0]
   const habilitado = estado?.abierto === true
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-5">
+    <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-5">
       <div className="text-center">
         <p className="text-gray-500 text-sm">{ronda.nombre}</p>
         <h2 className="text-xl font-bold text-yellow-400 mt-1">¿Quién es?</h2>

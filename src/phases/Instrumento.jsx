@@ -73,7 +73,7 @@ export function InstrumentoHost({ onAvanzar }) {
     const color = actualId ? colorParaParticipante(actualId) : COLORES_POSTIT[0]
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-10 py-12 bg-black/50">
+      <div className="h-full flex flex-col items-center justify-center gap-8 px-10 py-12 bg-black/50">
         <p className="text-yellow-400 text-2xl font-bold uppercase tracking-widest">
           Socializando {turno + 1} de {seleccionados.length}
         </p>
@@ -115,7 +115,7 @@ export function InstrumentoHost({ onAvanzar }) {
 
   // --- Modo normal: post-its + botón Socializar ---
   return (
-    <div className="min-h-screen flex flex-col items-center px-10 py-12 gap-8">
+    <div className="h-full flex flex-col items-center px-10 py-12 gap-8">
       <div className="text-center">
         <h2 className="text-4xl font-bold text-yellow-400">⚡ ¡El reto de hoy!</h2>
         <p className="text-gray-400 mt-2 text-xl">
@@ -220,7 +220,7 @@ export function InstrumentoPlayer({ enviarRespuesta, nombre, userId }) {
     if (esMiTurno) {
       const color = colorParaParticipante(userId)
       return (
-        <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
+        <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
           <div className="text-7xl animate-bounce">🎤</div>
           <h2 className="text-3xl font-bold text-yellow-400">¡Te tocó socializar!</h2>
           <div
@@ -250,7 +250,7 @@ export function InstrumentoPlayer({ enviarRespuesta, nombre, userId }) {
 
     if (estoySeleccionado) {
       return (
-        <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
           <div className="text-6xl animate-pulse">⏳</div>
           <h2 className="text-2xl font-bold text-yellow-400">Espera tu turno...</h2>
           <p className="text-gray-400">Pronto te tocará compartir tu reto</p>
@@ -259,7 +259,7 @@ export function InstrumentoPlayer({ enviarRespuesta, nombre, userId }) {
     }
 
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
         <div className="text-6xl">👂</div>
         <h2 className="text-2xl font-bold text-yellow-400">Escucha los retos de tus compañeros</h2>
         <p className="text-gray-400">Presta atención a quien está socializando</p>
@@ -270,7 +270,7 @@ export function InstrumentoPlayer({ enviarRespuesta, nombre, userId }) {
   if (enviado) {
     const color = colorParaParticipante(userId)
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-6 px-6">
         <p className="text-gray-400 text-sm">Tu reto de hoy:</p>
         <div
           className="w-full max-w-sm rounded-2xl p-6 flex flex-col gap-4 shadow-xl"
@@ -300,7 +300,7 @@ export function InstrumentoPlayer({ enviarRespuesta, nombre, userId }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6">
+    <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-6 px-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-yellow-400">⚡ ¡El reto de hoy!</h2>
         <p className="text-gray-300 mt-3 text-base leading-relaxed">

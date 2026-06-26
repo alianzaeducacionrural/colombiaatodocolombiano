@@ -92,7 +92,7 @@ export function EvaluacionHost() {
   // FIN
   if (fase === "fin") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6">
+      <div className="h-full flex flex-col items-center justify-center gap-6">
         <div className="text-7xl">🎉</div>
         <h2 className="text-4xl font-bold text-yellow-400">¡Actividad finalizada!</h2>
         <p className="text-gray-400 text-xl">Gracias por participar</p>
@@ -103,7 +103,7 @@ export function EvaluacionHost() {
   // SELECCIONADO — grande e impactante
   if (fase === "seleccionado") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-10 py-12 text-center">
+      <div className="h-full flex flex-col items-center justify-center gap-8 px-10 py-12 text-center">
         <p className="text-gray-500 text-sm uppercase tracking-widest">
           Evaluación — Pregunta {preguntaIdx + 1} de {PREGUNTAS_EVAL.length}
         </p>
@@ -134,14 +134,12 @@ export function EvaluacionHost() {
     )
   }
 
-  // ESPERANDO / GIRANDO — ruleta
+  // ESPERANDO / GIRANDO — ruleta (sin pregunta todavía)
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-10 py-12">
+    <div className="h-full flex flex-col items-center justify-center gap-8 px-10 py-12">
       <div className="text-center">
-        <p className="text-gray-500 text-sm uppercase tracking-widest">Evaluación</p>
-        <h2 className="text-3xl font-bold text-yellow-400 mt-1">
-          {PREGUNTAS_EVAL[preguntaIdx]}
-        </h2>
+        <p className="text-gray-500 text-sm uppercase tracking-widest">Evaluación Final</p>
+        <h2 className="text-3xl font-bold text-yellow-400 mt-1">Ruleta de participantes</h2>
         <p className="text-gray-500 text-sm mt-2">
           Pregunta {preguntaIdx + 1} de {PREGUNTAS_EVAL.length}
         </p>
@@ -194,7 +192,7 @@ export function EvaluacionPlayer({ userId, nombre }) {
   // ME SELECCIONARON — protagonista
   if (meSeleccionaron) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="text-6xl animate-bounce">🎤</div>
         <h1 className="text-5xl font-black text-yellow-400">{nombre}</h1>
         <div className="bg-gray-900 border border-yellow-400 rounded-2xl p-6 max-w-sm w-full">
@@ -211,7 +209,7 @@ export function EvaluacionPlayer({ userId, nombre }) {
   // ALGUIEN MÁS RESPONDE — ve la pregunta también
   if (estado?.activo && estado?.seleccionadoNombre) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
         <div className="text-4xl">🎤</div>
         <p className="text-gray-400 text-lg">Está respondiendo</p>
         <h2 className="text-3xl font-bold text-white">{estado.seleccionadoNombre}</h2>
@@ -228,7 +226,7 @@ export function EvaluacionPlayer({ userId, nombre }) {
 
   // ESPERANDO ruleta
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+    <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
       <div className="text-5xl animate-pulse">🎲</div>
       <h2 className="text-2xl font-bold text-yellow-400">Evaluación final</h2>
       <p className="text-gray-400">

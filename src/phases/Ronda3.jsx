@@ -415,18 +415,18 @@ export function Ronda3Player({ userId, nombre }) {
   const [enviado, setEnviado] = useState(false)
   const [tiempo, setTiempo] = useState(ronda.tiempo)
   const timerRef = useRef(null)
+  const estadoRef = useRef(null)
 
   useEffect(() => {
     const unsub = onValue(ref(db, "sala/ronda3_estado"), snap => {
       const data = snap.val()
-      setEstado(prev => {
-        // Reset al cambiar pregunta o volver a "anunciando"
-        if (data?.preguntaIdx !== prev?.preguntaIdx || data?.fase === "anunciando") {
-          setSeleccion(null)
-          setEnviado(false)
-        }
-        return data
-      })
+      if (data?.preguntaIdx !== estadoRef.current?.preguntaIdx) {
+        setSeleccion(null)
+        setEnviado(false)
+        setTiempo(ronda.tiempo)
+      }
+      estadoRef.current = data
+      setEstado(data)
     })
     return () => unsub()
   }, [])

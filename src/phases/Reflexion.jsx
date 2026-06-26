@@ -32,7 +32,7 @@ export function ReflexionHost({ onActivar }) {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-10 py-12">
+    <div className="h-full flex flex-col items-center justify-center gap-6 px-10 py-8">
       {!mostrarWordCloud ? (
         <>
           {/* Título del momento */}
@@ -45,16 +45,15 @@ export function ReflexionHost({ onActivar }) {
 
           {/* Video embebido */}
           <div className="w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl shadow-black/50 border border-gray-800">
-            <div className="relative" style={{ paddingBottom: "56.25%" }}>
-              <iframe
-                className="absolute inset-0 w-full h-full"
-                src={`https://www.youtube.com/embed/${CONFIG.reflexion.videoId}?start=${CONFIG.reflexion.videoStart}&end=${CONFIG.reflexion.videoEnd}&rel=0&modestbranding=1`}
-                title={CONFIG.reflexion.nombre}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+            <iframe
+              className="w-full"
+              style={{ height: "420px" }}
+              src={`https://www.youtube.com/embed/${CONFIG.reflexion.videoId}?start=${CONFIG.reflexion.videoStart}&end=${CONFIG.reflexion.videoEnd}&rel=0&modestbranding=1`}
+              title={CONFIG.reflexion.nombre}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+              allowFullScreen
+            />
           </div>
 
           {/* Botón para revelar la pregunta */}
@@ -64,10 +63,6 @@ export function ReflexionHost({ onActivar }) {
           >
             Ya vimos el video →
           </button>
-
-          <p className="text-gray-600 text-sm">
-            Cuando terminen de ver el video, presiona el botón para activar la pregunta en los celulares
-          </p>
         </>
       ) : (
         <>
@@ -143,7 +138,7 @@ export function ReflexionPlayer({ enviarRespuesta }) {
 
   if (enviado) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="text-6xl">✨</div>
         <h2 className="text-2xl font-bold text-yellow-400">¡Gracias!</h2>
         <p className="text-gray-400">Tu palabra ya aparece en la pantalla</p>
@@ -156,7 +151,7 @@ export function ReflexionPlayer({ enviarRespuesta }) {
 
   if (!videoTerminado) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="text-6xl animate-pulse">🎥</div>
         <h2 className="text-2xl font-bold text-yellow-400">{CONFIG.reflexion.nombre}</h2>
         <p className="text-gray-400 text-lg">Estamos viendo el video juntos</p>
@@ -166,7 +161,7 @@ export function ReflexionPlayer({ enviarRespuesta }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6">
+    <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-6 px-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-yellow-400">
           {CONFIG.reflexion.instruccion}
