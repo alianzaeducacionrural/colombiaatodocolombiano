@@ -6,8 +6,8 @@ import { CONFIG } from "../data/actividad.config"
 const ronda = CONFIG.rondas[1]
 const LETRAS = ["A", "B", "C", "D"]
 const NIVELES = [
-  { blur: "blur-xl", label: "🟡 1000 pts" },
-  { blur: "blur-md", label: "🟠 600 pts" },
+  { blur: "blur-md", label: "🟡 1000 pts" },
+  { blur: "blur-sm", label: "🟠 600 pts" },
   { blur: "blur-none", label: "🔴 300 pts" },
 ]
 
@@ -18,6 +18,7 @@ export function Ronda2Host() {
   const [fase, setFase] = useState("jugando") // "jugando" | "resultado"
   const [respuestas, setRespuestas] = useState({})
   const [participantes, setParticipantes] = useState({})
+  const [timerNivel, setTimerNivel] = useState(ronda.tiempoPorNivel)
   const timerRef = useRef(null)
 
   const pregunta = ronda.preguntas[preguntaIdx]
@@ -74,6 +75,15 @@ export function Ronda2Host() {
     return () => clearInterval(timerRef.current)
   }, [preguntaIdx])
 
+  // Timer de cuenta regresiva del nivel actual (se reinicia al cambiar nivel o pregunta)
+  useEffect(() => {
+    setTimerNivel(ronda.tiempoPorNivel)
+    const tick = setInterval(() => {
+      setTimerNivel(t => Math.max(0, t - 1))
+    }, 1000)
+    return () => clearInterval(tick)
+  }, [nivel, preguntaIdx])
+
   // Si todos respondieron, mostrar resultado automáticamente
   useEffect(() => {
     const total = Object.keys(participantes).length
@@ -124,21 +134,26 @@ export function Ronda2Host() {
           {ronda.nombre} — Imagen {preguntaIdx + 1} de {ronda.preguntas.length}
         </p>
         {fase === "jugando" && (
-          <div className="flex items-center justify-center gap-3 mt-2">
-            {NIVELES.map((n, i) => (
-              <span
-                key={i}
-                className={`text-sm px-3 py-1 rounded-full font-bold transition-all ${
-                  i === nivel
-                    ? "bg-yellow-400 text-gray-950"
-                    : i < nivel
-                    ? "bg-gray-700 text-gray-500"
-                    : "bg-gray-800 text-gray-600"
-                }`}
-              >
-                {n.label}
-              </span>
-            ))}
+          <div className="flex flex-col items-center gap-2 mt-2">
+            <div className="flex items-center justify-center gap-3">
+              {NIVELES.map((n, i) => (
+                <span
+                  key={i}
+                  className={`text-sm px-3 py-1 rounded-full font-bold transition-all ${
+                    i === nivel
+                      ? "bg-yellow-400 text-gray-950"
+                      : i < nivel
+                      ? "bg-gray-700 text-gray-500"
+                      : "bg-gray-800 text-gray-600"
+                  }`}
+                >
+                  {n.label}
+                </span>
+              ))}
+            </div>
+            <span className={`text-4xl font-black ${timerNivel <= 3 ? "text-red-400" : "text-yellow-400"}`}>
+              {timerNivel}s
+            </span>
           </div>
         )}
       </div>
@@ -251,10 +266,10 @@ export function Ronda2Host() {
           )}
           {fase === "resultado" && esUltima && (
             <button
-              onClick={() => update(ref(db, "sala"), { fase: "leaderboard" })}
+              onClick={() => update(ref(db, "sala"), { fase: "juego_ronda3" })}
               className="bg-green-500 hover:bg-green-400 text-white font-bold px-8 py-3 rounded-xl transition"
             >
-              Ver resultados 🏆
+              Ir a Ronda 3 →
             </button>
           )}
         </div>

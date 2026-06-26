@@ -10,72 +10,71 @@ const PREGUNTAS_EVAL = [
 
 export function EvaluacionHost() {
   const [participantes, setParticipantes] = useState([])
-  const [fase, setFase] = useState("ruleta") // "ruleta" | "pregunta" | "fin"
+  const [fase, setFase] = useState("esperando") // "esperando"|"girando"|"seleccionado"|"fin"
   const [preguntaIdx, setPreguntaIdx] = useState(0)
   const [seleccionado, setSeleccionado] = useState(null)
   const [usados, setUsados] = useState([])
   const [iluminado, setIluminado] = useState(0)
-  const [girando, setGirando] = useState(false)
-  const intervalRef = useRef(null)
+  const timerRef = useRef(null)
 
   useEffect(() => {
     const unsub = onValue(ref(db, "sala/participantes"), snap => {
       const data = snap.val() || {}
-      const lista = Object.entries(data).map(([id, p]) => ({ id, ...p }))
-      setParticipantes(lista)
+      setParticipantes(Object.entries(data).map(([id, p]) => ({ id, ...p })))
     })
     return () => unsub()
   }, [])
 
   function girarRuleta() {
-    if (girando || participantes.length === 0) return
-    setGirando(true)
+    if (fase === "girando" || participantes.length === 0) return
+    clearTimeout(timerRef.current)
+    setFase("girando")
     setSeleccionado(null)
 
-    // Disponibles — no usados aún
     let disponibles = participantes.filter(p => !usados.includes(p.id))
     if (disponibles.length === 0) {
-      disponibles = participantes
+      disponibles = [...participantes]
       setUsados([])
     }
 
-    let velocidad = 80
-    let iteraciones = 0
-    const totalIteraciones = 25 + Math.floor(Math.random() * 15)
+    let iter = 0
+    const total = 25 + Math.floor(Math.random() * 15)
 
-    intervalRef.current = setInterval(() => {
+    // Fase rápida
+    const fastInterval = setInterval(() => {
       setIluminado(prev => (prev + 1) % participantes.length)
-      iteraciones++
-
-      // Desacelerar hacia el final
-      if (iteraciones > totalIteraciones * 0.6) {
-        velocidad += 30
-        clearInterval(intervalRef.current)
-        intervalRef.current = setInterval(() => {
-          setIluminado(prev => (prev + 1) % participantes.length)
-          iteraciones++
-
-          if (iteraciones >= totalIteraciones) {
-            clearInterval(intervalRef.current)
-
-            // Seleccionar ganador de los disponibles
-            const ganador = disponibles[Math.floor(Math.random() * disponibles.length)]
-            const ganadorIdx = participantes.findIndex(p => p.id === ganador.id)
-            setIluminado(ganadorIdx)
-            setSeleccionado(ganador)
-            setUsados(prev => [...prev, ganador.id])
-            setGirando(false)
-
-            // Notificar al participante seleccionado
-            update(ref(db, "sala/evaluacion_estado"), {
-              seleccionadoId: ganador.id,
-              preguntaIdx,
-              activo: true,
-            })
-          }
-        }, velocidad)
+      iter++
+      if (iter > total * 0.6) {
+        clearInterval(fastInterval)
+        spinSlow()
       }
-    }, velocidad)
+    }, 80)
+
+    function spinSlow() {
+      let vel = 150
+      function step() {
+        if (iter >= total) {
+          const ganador = disponibles[Math.floor(Math.random() * disponibles.length)]
+          const idx = participantes.findIndex(p => p.id === ganador.id)
+          setIluminado(idx)
+          setSeleccionado(ganador)
+          setUsados(prev => [...prev, ganador.id])
+          setFase("seleccionado")
+          update(ref(db, "sala/evaluacion_estado"), {
+            seleccionadoId: ganador.id,
+            seleccionadoNombre: ganador.nombre,
+            preguntaIdx,
+            activo: true,
+          })
+          return
+        }
+        setIluminado(prev => (prev + 1) % participantes.length)
+        iter++
+        vel += 40
+        timerRef.current = setTimeout(step, vel)
+      }
+      step()
+    }
   }
 
   async function siguientePregunta() {
@@ -86,10 +85,11 @@ export function EvaluacionHost() {
     } else {
       setPreguntaIdx(preguntaIdx + 1)
       setSeleccionado(null)
-      setFase("ruleta")
+      setFase("esperando")
     }
   }
 
+  // FIN
   if (fase === "fin") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6">
@@ -100,6 +100,41 @@ export function EvaluacionHost() {
     )
   }
 
+  // SELECCIONADO — grande e impactante
+  if (fase === "seleccionado") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-10 py-12 text-center">
+        <p className="text-gray-500 text-sm uppercase tracking-widest">
+          Evaluación — Pregunta {preguntaIdx + 1} de {PREGUNTAS_EVAL.length}
+        </p>
+
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-gray-400 text-xl">Le toca responder</p>
+          <div className="text-8xl font-black text-yellow-400 leading-tight tracking-tight">
+            {seleccionado?.nombre}
+          </div>
+        </div>
+
+        <div className="bg-gray-900 border border-yellow-400/30 rounded-3xl px-10 py-8 max-w-2xl w-full">
+          <p className="text-gray-400 text-xs mb-3 uppercase tracking-widest">Pregunta</p>
+          <p className="text-white text-2xl font-bold leading-relaxed">
+            {PREGUNTAS_EVAL[preguntaIdx]}
+          </p>
+        </div>
+
+        <p className="text-gray-500 text-sm">Está viendo la pregunta en su celular 📱</p>
+
+        <button
+          onClick={siguientePregunta}
+          className="bg-gray-700 hover:bg-gray-600 text-white font-bold px-8 py-3 rounded-xl transition"
+        >
+          {preguntaIdx + 1 >= PREGUNTAS_EVAL.length ? "Finalizar actividad 🎉" : "Siguiente →"}
+        </button>
+      </div>
+    )
+  }
+
+  // ESPERANDO / GIRANDO — ruleta
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-10 py-12">
       <div className="text-center">
@@ -112,18 +147,15 @@ export function EvaluacionHost() {
         </p>
       </div>
 
-      {/* Ruleta de nombres */}
       <div className="w-full max-w-3xl">
         <div className="flex flex-wrap gap-3 justify-center">
           {participantes.map((p, i) => (
             <div
               key={p.id}
               className={`px-5 py-3 rounded-2xl font-bold text-lg transition-all duration-100 ${
-                i === iluminado && (girando || seleccionado?.id === p.id)
-                  ? seleccionado?.id === p.id
-                    ? "bg-yellow-400 text-gray-950 scale-110 shadow-lg shadow-yellow-400/40"
-                    : "bg-yellow-400/80 text-gray-950 scale-105"
-                  : usados.includes(p.id) && !girando
+                i === iluminado && fase === "girando"
+                  ? "bg-yellow-400 text-gray-950 scale-110 shadow-lg shadow-yellow-400/40"
+                  : usados.includes(p.id)
                   ? "bg-gray-800 text-gray-600 opacity-50"
                   : "bg-gray-800 text-gray-300"
               }`}
@@ -134,40 +166,15 @@ export function EvaluacionHost() {
         </div>
       </div>
 
-      {/* Seleccionado */}
-      {seleccionado && !girando && (
-        <div className="bg-yellow-400/10 border border-yellow-400 rounded-2xl px-8 py-4 text-center">
-          <p className="text-gray-400 text-sm">Le toca responder</p>
-          <p className="text-yellow-400 text-3xl font-bold mt-1">{seleccionado.nombre}</p>
-          <p className="text-gray-500 text-sm mt-1">Está viendo la pregunta en su celular</p>
-        </div>
-      )}
-
-      {/* Botones */}
-      <div className="flex gap-3">
-        {!seleccionado && (
-          <button
-            onClick={girarRuleta}
-            disabled={girando}
-            className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50
-                       text-gray-950 font-bold text-xl px-10 py-4 rounded-2xl
-                       transition-all hover:scale-105"
-          >
-            {girando ? "Girando..." : "🎲 ¡Girar ruleta!"}
-          </button>
-        )}
-        {seleccionado && !girando && (
-          <button
-            onClick={siguientePregunta}
-            className="bg-gray-700 hover:bg-gray-600 text-white font-bold
-                       px-8 py-3 rounded-xl transition"
-          >
-            {preguntaIdx + 1 >= PREGUNTAS_EVAL.length
-              ? "Finalizar actividad 🎉"
-              : "Siguiente pregunta →"}
-          </button>
-        )}
-      </div>
+      <button
+        onClick={girarRuleta}
+        disabled={fase === "girando"}
+        className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50
+                   text-gray-950 font-bold text-xl px-10 py-4 rounded-2xl
+                   transition-all hover:scale-105 disabled:hover:scale-100"
+      >
+        {fase === "girando" ? "Girando..." : "🎲 ¡Girar ruleta!"}
+      </button>
     </div>
   )
 }
@@ -184,26 +191,44 @@ export function EvaluacionPlayer({ userId, nombre }) {
 
   const meSeleccionaron = estado?.seleccionadoId === userId && estado?.activo
 
+  // ME SELECCIONARON — protagonista
   if (meSeleccionaron) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center
-                      justify-center gap-6 px-6 text-center">
+      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="text-6xl animate-bounce">🎤</div>
-        <h2 className="text-2xl font-bold text-yellow-400">¡Te seleccionaron!</h2>
-        <div className="bg-gray-900 border border-yellow-400 rounded-2xl p-6 max-w-sm">
-          <p className="text-gray-400 text-sm mb-3">Tu pregunta:</p>
-          <p className="text-white text-lg font-medium leading-relaxed">
+        <h1 className="text-5xl font-black text-yellow-400">{nombre}</h1>
+        <div className="bg-gray-900 border border-yellow-400 rounded-2xl p-6 max-w-sm w-full">
+          <p className="text-gray-400 text-xs mb-3 uppercase tracking-widest">Tu pregunta</p>
+          <p className="text-white text-xl font-bold leading-relaxed">
             {PREGUNTAS_EVAL[estado?.preguntaIdx ?? 0]}
           </p>
         </div>
-        <p className="text-gray-500 text-sm">Responde en voz alta 🎙️</p>
+        <p className="text-yellow-400 font-bold text-lg">Responde en voz alta 🎙️</p>
       </div>
     )
   }
 
+  // ALGUIEN MÁS RESPONDE — ve la pregunta también
+  if (estado?.activo && estado?.seleccionadoNombre) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+        <div className="text-4xl">🎤</div>
+        <p className="text-gray-400 text-lg">Está respondiendo</p>
+        <h2 className="text-3xl font-bold text-white">{estado.seleccionadoNombre}</h2>
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 max-w-sm w-full">
+          <p className="text-gray-500 text-xs mb-2 uppercase tracking-widest">Pregunta</p>
+          <p className="text-white text-base font-medium leading-relaxed">
+            {PREGUNTAS_EVAL[estado?.preguntaIdx ?? 0]}
+          </p>
+        </div>
+        <p className="text-gray-600 text-sm">Escucha y participa en la conversación</p>
+      </div>
+    )
+  }
+
+  // ESPERANDO ruleta
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center
-                    justify-center gap-5 px-6 text-center">
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
       <div className="text-5xl animate-pulse">🎲</div>
       <h2 className="text-2xl font-bold text-yellow-400">Evaluación final</h2>
       <p className="text-gray-400">

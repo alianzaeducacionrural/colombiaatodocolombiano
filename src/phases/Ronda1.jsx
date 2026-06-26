@@ -231,10 +231,10 @@ export function Ronda1Host() {
         )}
         {fase === "resultado" && esUltima && (
           <button
-            onClick={() => update(ref(db, "sala"), { fase: "leaderboard" })}
+            onClick={() => update(ref(db, "sala"), { fase: "juego_ronda2" })}
             className="bg-green-500 hover:bg-green-400 text-white font-bold px-8 py-3 rounded-xl transition"
           >
-            Ver resultados 🏆
+            Ir a Ronda 2 →
           </button>
         )}
       </div>
