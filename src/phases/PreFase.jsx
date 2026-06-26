@@ -121,12 +121,12 @@ export function PreFaseHost({ fase, onListo }) {
       </div>
 
       <div className={`w-full max-w-lg rounded-2xl border ${info.border} ${info.bg} p-6`}>
-        <p className="text-gray-400 text-sm uppercase tracking-widest mb-4">
+        <p className="text-gray-400 text-sm uppercase tracking-widest mb-4 text-left">
           Instrucciones
         </p>
         <ol className="flex flex-col gap-3">
           {info.instrucciones.map((inst, i) => (
-            <li key={i} className="flex items-start gap-3">
+            <li key={i} className="flex items-start gap-3 text-left">
               <span className={`font-black text-lg w-6 shrink-0 ${info.color}`}>
                 {i + 1}.
               </span>

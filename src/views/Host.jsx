@@ -174,7 +174,7 @@ function PantallaInicio() {
           <h2 className="text-xl font-bold text-green-400 mb-4">🎯 Evidencias de Aprendizaje</h2>
           <ol className="flex flex-col gap-3">
             {CONFIG.evidencias.map((ev, i) => (
-              <li key={i} className="flex items-start gap-3">
+              <li key={i} className="flex items-start gap-3 text-left">
                 <span className="bg-green-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5">
                   {i + 1}
                 </span>
