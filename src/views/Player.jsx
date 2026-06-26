@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { useParticipante } from "../hooks/useParticipante"
 import { CONFIG } from "../data/actividad.config"
+import { ReflexionPlayer } from "../phases/Reflexion"
 
 export default function Player() {
-  const { faseActual, registrado, registrarme } = useParticipante()
+  const { faseActual, registrado, registrarme, enviarRespuesta } = useParticipante()
   const [nombreInput, setNombreInput] = useState("")
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState("")
@@ -67,6 +68,11 @@ export default function Player() {
     )
   }
 
+  // Fase de reflexión: ReflexionPlayer ya trae su propio layout de pantalla completa
+  if (faseActual === "reflexion") {
+    return <ReflexionPlayer enviarRespuesta={enviarRespuesta} />
+  }
+
   // Pantallas según la fase actual
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center px-6">
@@ -78,9 +84,6 @@ export default function Player() {
         </div>
       )}
 
-      {faseActual === "reflexion" && (
-        <PlaceholderPlayer mensaje="🙏 Momento de reflexión" detalle="El anfitrión está liderando este momento" />
-      )}
       {faseActual === "instrumento" && (
         <PlaceholderPlayer mensaje="📋 Instrumento de Gobierno" detalle="Pronto verás las preguntas aquí" />
       )}

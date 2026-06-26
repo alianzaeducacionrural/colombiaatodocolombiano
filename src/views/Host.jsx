@@ -1,6 +1,7 @@
 import { useSala } from "../hooks/useSala"
 import { CONFIG } from "../data/actividad.config"
 import { QRCodeSVG as QRCode } from "qrcode.react"
+import { ReflexionHost } from "../phases/Reflexion"
 
 export default function Host() {
   const { sala, cargando, iniciarSala, siguienteFase, faseAnterior } = useSala()
@@ -56,7 +57,7 @@ export default function Host() {
       <div className="pb-20">
         {(!sala || sala.fase === undefined) && <PantallaInicio onIniciar={iniciarSala} />}
         {sala?.fase === "lobby" && <PantallaLobby participantes={participantes} />}
-        {sala?.fase === "reflexion" && <PlaceholderFase titulo="🙏 Oración / Reflexión" />}
+        {sala?.fase === "reflexion" && <ReflexionHost />}
         {sala?.fase === "instrumento" && <PlaceholderFase titulo="📋 Instrumento de Gobierno" />}
         {sala?.fase === "juego_ronda1" && <PlaceholderFase titulo="🎮 Ronda 1 — ¿De dónde es eso?" />}
         {sala?.fase === "juego_ronda2" && <PlaceholderFase titulo="🖼️ Ronda 2 — Adivina el... ¡Colombia!" />}

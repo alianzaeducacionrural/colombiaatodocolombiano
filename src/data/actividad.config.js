@@ -14,5 +14,9 @@ export const CONFIG = {
     "Demuestra capacidad para trabajar bajo presión, tomar decisiones rápidas y colaborar con otros en tiempo real.",
   ],
 
+  reflexion: {
+    pregunta: "Si Colombia fuera una persona… ¿cómo la describirías con 3 palabras?",
+  },
+
   url_jugar: "https://alianzaeducacionrural.github.io/colombiaatodocolombiano/jugar",
 }
