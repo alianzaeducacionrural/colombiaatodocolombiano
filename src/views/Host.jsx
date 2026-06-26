@@ -149,10 +149,16 @@ function PantallaInicio() {
   return (
     <div className="h-full flex flex-col items-center justify-center px-10 py-6 gap-6">
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-yellow-400 tracking-tight">
-          {CONFIG.titulo}
-        </h1>
-        <p className="text-gray-400 mt-1 text-base">Actividad de Conjunto</p>
+        <p className="text-gray-400 text-base">Bienvenidos equipo de padrinos a las</p>
+        <p className="text-white text-xl font-bold mt-1">Actividades de Conjunto</p>
+        <div className="flex items-center justify-center gap-2 mt-2">
+          <span className="text-yellow-400 text-xl">✦</span>
+          <h1 className="text-4xl font-black text-yellow-400 tracking-tight">
+            {CONFIG.titulo}
+          </h1>
+          <span>🇨🇴</span>
+          <span className="text-yellow-400 text-xl">✦</span>
+        </div>
       </div>
 
       <div className="w-full max-w-5xl grid grid-cols-2 gap-6">
