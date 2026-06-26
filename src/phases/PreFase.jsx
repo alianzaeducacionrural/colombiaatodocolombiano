@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react"
 
 const PREFASES = {
   reflexion: {
@@ -105,26 +104,9 @@ const PREFASES = {
   },
 }
 
-// Vista del ANFITRIÓN — cuenta regresiva 5 segundos y avanza automáticamente
+// Vista del ANFITRIÓN — botón manual para comenzar
 export function PreFaseHost({ fase, onListo }) {
-  const [cuenta, setCuenta] = useState(5)
   const info = PREFASES[fase]
-
-  useEffect(() => {
-    setCuenta(5)
-    const intervalo = setInterval(() => {
-      setCuenta(c => {
-        if (c <= 1) {
-          clearInterval(intervalo)
-          onListo()
-          return 0
-        }
-        return c - 1
-      })
-    }, 1000)
-    return () => clearInterval(intervalo)
-  }, [fase])
-
   if (!info) return null
 
   return (
@@ -154,11 +136,12 @@ export function PreFaseHost({ fase, onListo }) {
         </ol>
       </div>
 
-      {/* Cuenta regresiva */}
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-gray-500 text-sm">Comenzando en</p>
-        <span className={`text-7xl font-black ${info.color}`}>{cuenta}</span>
-      </div>
+      <button
+        onClick={onListo}
+        className="bg-yellow-400 hover:bg-yellow-300 text-gray-950 font-black text-xl px-12 py-4 rounded-2xl transition-all hover:scale-105 shadow-lg"
+      >
+        ¡Comenzar! →
+      </button>
     </div>
   )
 }
