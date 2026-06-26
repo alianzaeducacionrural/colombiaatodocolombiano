@@ -207,7 +207,7 @@ export function Ronda3Host() {
   // ─── GRUPOS ────────────────────────────────────────────────
   if (fase === "esperando" || fase === "grupos") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-10 py-12">
+      <div className="h-full flex flex-col items-center justify-center gap-8 px-10 py-12">
         <div className="text-center">
           <p className="text-gray-500 text-sm uppercase tracking-widest">{ronda.nombre}</p>
           <h2 className="text-3xl font-bold text-yellow-400 mt-2">Grupos formados</h2>
@@ -249,7 +249,7 @@ export function Ronda3Host() {
   // ─── ANUNCIANDO ────────────────────────────────────────────
   if (fase === "anunciando") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-10 py-12">
+      <div className="h-full flex flex-col items-center justify-center gap-8 px-10 py-12">
         <p className="text-gray-500 text-sm uppercase tracking-widest">
           {ronda.nombre} — Pregunta {preguntaIdx + 1} de {ronda.preguntas.length}
         </p>
@@ -278,7 +278,7 @@ export function Ronda3Host() {
 
   // ─── JUGANDO / RESULTADO ────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-10 py-8">
+    <div className="h-full flex flex-col items-center justify-center gap-6 px-10 py-8">
       <div className="text-center">
         <p className="text-gray-500 text-sm uppercase tracking-widest">
           {ronda.nombre} — Pregunta {preguntaIdx + 1} de {ronda.preguntas.length}
@@ -468,7 +468,7 @@ export function Ronda3Player({ userId, nombre }) {
   // GRUPOS — esperando al anfitrión
   if (!faseEstado || faseEstado === "grupos") {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
         <BadgeGrupo />
         <div className="text-5xl animate-pulse">⏳</div>
         <h2 className="text-2xl font-bold text-yellow-400">{ronda.nombre}</h2>
@@ -480,7 +480,7 @@ export function Ronda3Player({ userId, nombre }) {
   // ANUNCIANDO
   if (faseEstado === "anunciando") {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
         <BadgeGrupo />
         {esRepresentante ? (
           <>
@@ -502,7 +502,7 @@ export function Ronda3Player({ userId, nombre }) {
   // RESULTADO
   if (faseEstado === "resultado") {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
         <BadgeGrupo />
         <div className="text-5xl">📊</div>
         <h2 className="text-2xl font-bold text-yellow-400">Resultado</h2>
@@ -524,7 +524,7 @@ export function Ronda3Player({ userId, nombre }) {
   // JUGANDO — no es representante
   if (faseEstado === "jugando" && !esRepresentante) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
         <BadgeGrupo />
         <div className="text-5xl">👀</div>
         <h2 className="text-2xl font-bold text-white">Esta no te toca</h2>
@@ -545,7 +545,7 @@ export function Ronda3Player({ userId, nombre }) {
   // JUGANDO — es representante y ya respondió
   if (faseEstado === "jugando" && esRepresentante && enviado) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
         <div className="text-5xl">✅</div>
         <h2 className="text-2xl font-bold text-yellow-400">¡Respondiste!</h2>
         <BadgeGrupo />
@@ -563,7 +563,7 @@ export function Ronda3Player({ userId, nombre }) {
   // JUGANDO — es representante — debe responder
   if (faseEstado === "jugando" && esRepresentante) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-5">
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-5">
         <div className="text-center">
           <BadgeGrupo />
           <p className="text-yellow-400 font-bold text-lg mt-3">⚡ ¡Te toca responder!</p>
@@ -603,7 +603,7 @@ export function Ronda3Player({ userId, nombre }) {
 
   // Fallback
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+    <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
       <BadgeGrupo />
       <div className="text-5xl animate-pulse">⚡</div>
       <h2 className="text-2xl font-bold text-yellow-400">{ronda.nombre}</h2>
