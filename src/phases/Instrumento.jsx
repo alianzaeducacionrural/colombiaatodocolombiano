@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { db } from "../config/firebase"
-import { ref, onValue, update } from "firebase/database"
+import { ref, onValue, set } from "firebase/database"
 
 const COLORES_POSTIT = [
   { bg: "#FACC15", text: "#1a1a1a" }, // amarillo
@@ -23,8 +23,9 @@ function colorParaParticipante(userId) {
 }
 
 // Vista del ANFITRIÓN
-export function InstrumentoHost() {
+export function InstrumentoHost({ onAvanzar }) {
   const [retos, setRetos] = useState([])
+  const [socializando, setSocializando] = useState(null)
 
   useEffect(() => {
     const retosRef = ref(db, "sala/respuestas/instrumento")
@@ -46,6 +47,73 @@ export function InstrumentoHost() {
     return () => unsub()
   }, [])
 
+  useEffect(() => {
+    const socRef = ref(db, "sala/instrumento_socializando")
+    const unsub = onValue(socRef, (snapshot) => setSocializando(snapshot.val()))
+    return () => unsub()
+  }, [])
+
+  function handleSocializar() {
+    const ids = retos.map((r) => r.userId)
+    const barajados = [...ids].sort(() => Math.random() - 0.5)
+    const seleccionados = barajados.slice(0, Math.min(3, barajados.length))
+    set(ref(db, "sala/instrumento_socializando"), {
+      activo: true,
+      seleccionados,
+      turno: 0,
+    })
+  }
+
+  // --- Modo SOCIALIZAR: spotlight del turno actual ---
+  if (socializando?.activo) {
+    const seleccionados = socializando.seleccionados || []
+    const turno = socializando.turno || 0
+    const actualId = seleccionados[turno]
+    const retoActual = retos.find((r) => r.userId === actualId)
+    const color = actualId ? colorParaParticipante(actualId) : COLORES_POSTIT[0]
+
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-10 py-12 bg-black/50">
+        <p className="text-yellow-400 text-2xl font-bold uppercase tracking-widest">
+          Socializando {turno + 1} de {seleccionados.length}
+        </p>
+
+        {retoActual ? (
+          <div
+            className="w-full max-w-2xl rounded-3xl p-10 flex flex-col gap-6 shadow-2xl shadow-yellow-400/20 scale-100"
+            style={{ backgroundColor: color.bg, color: color.text }}
+          >
+            <div className="flex flex-col gap-1 opacity-20">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-px w-full bg-current" />
+              ))}
+            </div>
+            <p className="text-3xl font-bold leading-snug">"{retoActual.reto}"</p>
+            <div className="flex items-center gap-3 pt-4 border-t border-current border-opacity-20">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
+                style={{ backgroundColor: "rgba(0,0,0,0.15)" }}
+              >
+                {retoActual.nombre.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-xl font-bold">{retoActual.nombre}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-gray-400 text-lg">Sin reto para este turno</p>
+        )}
+
+        <button
+          onClick={() => onAvanzar(turno, seleccionados.length)}
+          className="bg-yellow-400 hover:bg-yellow-300 text-gray-950 font-bold text-lg px-10 py-3 rounded-2xl transition-all hover:scale-105 shadow-lg"
+        >
+          Siguiente →
+        </button>
+      </div>
+    )
+  }
+
+  // --- Modo normal: post-its + botón Socializar ---
   return (
     <div className="min-h-screen flex flex-col items-center px-10 py-12 gap-8">
       <div className="text-center">
@@ -107,16 +175,32 @@ export function InstrumentoHost() {
       <p className="text-gray-600 text-sm">
         {retos.length} participante{retos.length !== 1 ? "s" : ""} han compartido su reto
       </p>
+
+      {/* Botón Socializar: solo si hay retos y no se está socializando */}
+      {retos.length >= 1 && !socializando?.activo && (
+        <button
+          onClick={handleSocializar}
+          className="fixed bottom-24 right-6 z-40 bg-purple-600 hover:bg-purple-500 text-white font-bold text-lg px-6 py-3 rounded-2xl shadow-lg transition-all hover:scale-105"
+        >
+          Socializar 🎲
+        </button>
+      )}
     </div>
   )
 }
 
 // Vista del PARTICIPANTE
-export function InstrumentoPlayer({ enviarRespuesta, nombre }) {
+export function InstrumentoPlayer({ enviarRespuesta, nombre, userId }) {
   const [texto, setTexto] = useState("")
   const [enviado, setEnviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
-  const [miColor, setMiColor] = useState(null)
+  const [socializando, setSocializando] = useState(null)
+
+  useEffect(() => {
+    const socRef = ref(db, "sala/instrumento_socializando")
+    const unsub = onValue(socRef, (snapshot) => setSocializando(snapshot.val()))
+    return () => unsub()
+  }, [])
 
   async function handleEnviar() {
     if (!texto.trim() || enviado) return
@@ -126,8 +210,65 @@ export function InstrumentoPlayer({ enviarRespuesta, nombre }) {
     setEnviando(false)
   }
 
+  // --- Modo SOCIALIZAR (tiene prioridad sobre el resto) ---
+  if (socializando?.activo) {
+    const seleccionados = socializando.seleccionados || []
+    const turno = socializando.turno || 0
+    const estoySeleccionado = seleccionados.includes(userId)
+    const esMiTurno = seleccionados[turno] === userId
+
+    if (esMiTurno) {
+      const color = colorParaParticipante(userId)
+      return (
+        <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
+          <div className="text-7xl animate-bounce">🎤</div>
+          <h2 className="text-3xl font-bold text-yellow-400">¡Te tocó socializar!</h2>
+          <div
+            className="w-full max-w-sm rounded-2xl p-6 flex flex-col gap-4 shadow-xl"
+            style={{ backgroundColor: color.bg, color: color.text }}
+          >
+            <div className="flex flex-col gap-1 opacity-20">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-px w-full bg-current" />
+              ))}
+            </div>
+            <p className="text-xl font-bold leading-snug">"{texto}"</p>
+            <div className="flex items-center gap-2 pt-2 border-t border-current border-opacity-20">
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ backgroundColor: "rgba(0,0,0,0.15)" }}
+              >
+                {nombre.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm font-bold">{nombre}</span>
+            </div>
+          </div>
+          <p className="text-gray-400 text-sm">Comparte tu reto con el grupo</p>
+        </div>
+      )
+    }
+
+    if (estoySeleccionado) {
+      return (
+        <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <div className="text-6xl animate-pulse">⏳</div>
+          <h2 className="text-2xl font-bold text-yellow-400">Espera tu turno...</h2>
+          <p className="text-gray-400">Pronto te tocará compartir tu reto</p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="text-6xl">👂</div>
+        <h2 className="text-2xl font-bold text-yellow-400">Escucha los retos de tus compañeros</h2>
+        <p className="text-gray-400">Presta atención a quien está socializando</p>
+      </div>
+    )
+  }
+
   if (enviado) {
-    const color = miColor || COLORES_POSTIT[0]
+    const color = colorParaParticipante(userId)
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-6">
         <p className="text-gray-400 text-sm">Tu reto de hoy:</p>

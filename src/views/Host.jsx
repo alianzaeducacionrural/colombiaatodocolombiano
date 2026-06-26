@@ -3,9 +3,14 @@ import { CONFIG } from "../data/actividad.config"
 import { QRCodeSVG as QRCode } from "qrcode.react"
 import { ReflexionHost } from "../phases/Reflexion"
 import { InstrumentoHost } from "../phases/Instrumento"
+import { Ronda1Host } from "../phases/Ronda1"
+import { Ronda2Host } from "../phases/Ronda2"
+import { Ronda3Host } from "../phases/Ronda3"
+import { LeaderboardHost } from "../phases/Leaderboard"
+import { EvaluacionHost } from "../phases/Evaluacion"
 
 export default function Host() {
-  const { sala, cargando, iniciarSala, siguienteFase, faseAnterior, resetSala } = useSala()
+  const { sala, cargando, iniciarSala, siguienteFase, faseAnterior, resetSala, activarReflexion, avanzarSocializacion } = useSala()
 
   if (cargando) return <Cargando />
 
@@ -72,14 +77,20 @@ export default function Host() {
       <div className="pb-20">
         {(!sala || sala.fase === undefined) && <PantallaInicio onIniciar={iniciarSala} />}
         {sala?.fase === "lobby" && <PantallaLobby participantes={participantes} />}
-        {sala?.fase === "reflexion" && <ReflexionHost />}
-       {sala?.fase === "instrumento" && <InstrumentoHost />}
-        {sala?.fase === "juego_ronda1" && <PlaceholderFase titulo="🎮 Ronda 1 — ¿De dónde es eso?" />}
-        {sala?.fase === "juego_ronda2" && <PlaceholderFase titulo="🖼️ Ronda 2 — Adivina el... ¡Colombia!" />}
-        {sala?.fase === "juego_ronda3" && <PlaceholderFase titulo="⚡ Ronda 3 — Relámpago Colombiano" />}
-        {sala?.fase === "leaderboard" && <PlaceholderFase titulo="🏆 Tabla de Líderes" />}
-        {sala?.fase === "evaluacion" && <PlaceholderFase titulo="✅ Evaluación" />}
-        {sala?.fase === "fin" && <PlaceholderFase titulo="🎉 ¡Actividad finalizada!" />}
+        {sala?.fase === "reflexion" && <ReflexionHost onActivar={activarReflexion} />}
+        {sala?.fase === "instrumento" && <InstrumentoHost onAvanzar={avanzarSocializacion} />}
+        {sala?.fase === "juego_ronda1" && <Ronda1Host />}
+        {sala?.fase === "juego_ronda2" && <Ronda2Host />}
+        {sala?.fase === "juego_ronda3" && <Ronda3Host />}
+        {sala?.fase === "leaderboard" && <LeaderboardHost />}
+        {sala?.fase === "evaluacion" && <EvaluacionHost />}
+        {sala?.fase === "fin" && (
+          <div className="min-h-screen flex flex-col items-center justify-center gap-6">
+            <div className="text-7xl">🎉</div>
+            <h2 className="text-4xl font-bold text-yellow-400">¡Actividad finalizada!</h2>
+            <p className="text-gray-400 text-xl">Gracias a todos por participar</p>
+          </div>
+        )}
       </div>
     </div>
   )

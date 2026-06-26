@@ -18,7 +18,15 @@ export function useSala() {
 
   // Inicializa la sala (solo el anfitrión)
   async function iniciarSala() {
-    await set(ref(db, "sala"), SALA_INICIAL)
+    await set(ref(db, "sala"), {
+      ...SALA_INICIAL,
+      reflexion_activa: false,
+    })
+  }
+
+  // Activa la pregunta de reflexión en los celulares (tras el video)
+  async function activarReflexion() {
+    await update(ref(db, "sala"), { reflexion_activa: true })
   }
 
   // Avanza a la siguiente fase (solo el anfitrión)
@@ -46,5 +54,16 @@ export function useSala() {
     await set(ref(db, "sala"), null)
   }
 
-  return { sala, cargando, iniciarSala, siguienteFase, faseAnterior, resetSala }
+  // Avanza el turno de socialización; al terminar limpia el nodo
+  async function avanzarSocializacion(turnoActual, total) {
+    if (turnoActual + 1 >= total) {
+      await set(ref(db, "sala/instrumento_socializando"), null)
+    } else {
+      await update(ref(db, "sala/instrumento_socializando"), {
+        turno: turnoActual + 1,
+      })
+    }
+  }
+
+  return { sala, cargando, iniciarSala, siguienteFase, faseAnterior, resetSala, activarReflexion, avanzarSocializacion }
 }

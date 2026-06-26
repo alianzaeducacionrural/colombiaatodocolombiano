@@ -3,9 +3,14 @@ import { useParticipante } from "../hooks/useParticipante"
 import { CONFIG } from "../data/actividad.config"
 import { ReflexionPlayer } from "../phases/Reflexion"
 import { InstrumentoPlayer } from "../phases/Instrumento"
+import { Ronda1Player } from "../phases/Ronda1"
+import { Ronda2Player } from "../phases/Ronda2"
+import { Ronda3Player } from "../phases/Ronda3"
+import { LeaderboardPlayer } from "../phases/Leaderboard"
+import { EvaluacionPlayer } from "../phases/Evaluacion"
 
 export default function Player() {
-  const { faseActual, registrado, registrarme, enviarRespuesta, nombre } = useParticipante()
+  const { faseActual, registrado, registrarme, enviarRespuesta, nombre, userId } = useParticipante()
   const [nombreInput, setNombreInput] = useState("")
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState("")
@@ -30,8 +35,11 @@ export default function Player() {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-6 gap-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-yellow-400">{CONFIG.titulo}</h1>
-          <p className="text-gray-400 mt-2">Actividad de Conjunto</p>
+          <h1 className="text-4xl font-bold text-white">Actividades de Conjunto</h1>
+          <p className="text-xl text-yellow-400 mt-2">
+            Colombia a Todo Colombiano{" "}
+            <span role="img" aria-label="Colombia">🇨🇴</span>
+          </p>
         </div>
 
         <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 w-full max-w-sm flex flex-col gap-4">
@@ -58,7 +66,7 @@ export default function Player() {
             disabled={enviando}
             className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-gray-950 font-bold text-lg py-3 rounded-xl transition"
           >
-            {enviando ? "Uniéndome..." : "¡Unirme al juego!"}
+            {enviando ? "Uniéndome..." : "¡Entrar!"}
           </button>
         </div>
 
@@ -86,31 +94,42 @@ export default function Player() {
       )}
 
       {faseActual === "instrumento" && (
-        <InstrumentoPlayer 
-          enviarRespuesta={enviarRespuesta} 
-          nombre={nombre} 
+        <InstrumentoPlayer
+          enviarRespuesta={enviarRespuesta}
+          nombre={nombre}
+          userId={userId}
         />
       )}
       {faseActual === "juego_ronda1" && (
-        <PlaceholderPlayer mensaje="🎮 ¡Empieza el juego!" detalle="Ronda 1 — ¿De dónde es eso?" />
+        <Ronda1Player
+          userId={userId}
+          nombre={nombre}
+          enviarRespuesta={enviarRespuesta}
+        />
       )}
       {faseActual === "juego_ronda2" && (
-        <PlaceholderPlayer mensaje="🖼️ Ronda 2" detalle="Adivina el... ¡Colombia!" />
+        <Ronda2Player
+          userId={userId}
+          nombre={nombre}
+        />
       )}
       {faseActual === "juego_ronda3" && (
-        <PlaceholderPlayer mensaje="⚡ Ronda 3" detalle="¡Relámpago Colombiano!" />
+        <Ronda3Player
+          userId={userId}
+          nombre={nombre}
+        />
       )}
       {faseActual === "leaderboard" && (
-        <PlaceholderPlayer mensaje="🏆 Tabla de líderes" detalle="Revisa tu posición en la pantalla principal" />
+        <LeaderboardPlayer userId={userId} />
       )}
       {faseActual === "evaluacion" && (
-        <PlaceholderPlayer mensaje="✅ Evaluación final" detalle="Pronto verás las preguntas aquí" />
+        <EvaluacionPlayer userId={userId} nombre={nombre} />
       )}
       {faseActual === "fin" && (
         <div className="text-center flex flex-col gap-4">
           <div className="text-6xl">🎉</div>
           <h2 className="text-2xl font-bold text-yellow-400">¡Gracias por participar!</h2>
-          <p className="text-gray-400">La actividad ha finalizado</p>
+          <p className="text-gray-400">Hasta la próxima actividad de conjunto</p>
         </div>
       )}
     </div>
