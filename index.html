@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>actividad-de-conjunto</title>
+    <script>
+      (function() {
+        var params = new URLSearchParams(window.location.search);
+        var p = params.get("p");
+        if (p) {
+          params.delete("p");
+          var search = params.toString();
+          var url = window.location.origin + "/" + p +
+            (search ? "?" + search : "") +
+            (params.get("hash") ? "#" + params.get("hash") : "");
+          window.history.replaceState(null, null, url);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
