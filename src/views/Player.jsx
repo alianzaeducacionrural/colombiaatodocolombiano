@@ -1,3 +1,125 @@
+import { useState } from "react"
+import { useParticipante } from "../hooks/useParticipante"
+import { CONFIG } from "../data/actividad.config"
+
 export default function Player() {
-  return <div className="min-h-screen bg-gray-950 text-white grid place-items-center">Jugador</div>
+  const { faseActual, registrado, registrarme } = useParticipante()
+  const [nombreInput, setNombreInput] = useState("")
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState("")
+
+  async function handleRegistro() {
+    const nombre = nombreInput.trim()
+    if (!nombre) {
+      setError("Por favor escribe tu nombre")
+      return
+    }
+    if (nombre.length < 2) {
+      setError("El nombre debe tener al menos 2 caracteres")
+      return
+    }
+    setEnviando(true)
+    await registrarme(nombre)
+    setEnviando(false)
+  }
+
+  // Pantalla de registro — antes de unirse
+  if (!registrado) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-6 gap-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-yellow-400">{CONFIG.titulo}</h1>
+          <p className="text-gray-400 mt-2">Actividad de Conjunto</p>
+        </div>
+
+        <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 w-full max-w-sm flex flex-col gap-4">
+          <h2 className="text-xl font-bold text-white text-center">¿Cómo te llamas?</h2>
+
+          <input
+            type="text"
+            placeholder="Escribe tu nombre..."
+            value={nombreInput}
+            onChange={(e) => {
+              setNombreInput(e.target.value)
+              setError("")
+            }}
+            onKeyDown={(e) => e.key === "Enter" && handleRegistro()}
+            className="bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-lg outline-none focus:border-yellow-400 transition placeholder-gray-500"
+          />
+
+          {error && (
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          )}
+
+          <button
+            onClick={handleRegistro}
+            disabled={enviando}
+            className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-gray-950 font-bold text-lg py-3 rounded-xl transition"
+          >
+            {enviando ? "Uniéndome..." : "¡Unirme al juego!"}
+          </button>
+        </div>
+
+        <p className="text-gray-600 text-xs text-center">
+          Al unirte aparecerás en la pantalla del anfitrión
+        </p>
+      </div>
+    )
+  }
+
+  // Pantallas según la fase actual
+  return (
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center px-6">
+      {faseActual === "lobby" && (
+        <div className="text-center flex flex-col gap-4">
+          <div className="text-6xl animate-bounce">🎮</div>
+          <h2 className="text-2xl font-bold text-yellow-400">¡Ya estás dentro!</h2>
+          <p className="text-gray-400">Espera a que el anfitrión inicie la actividad...</p>
+        </div>
+      )}
+
+      {faseActual === "reflexion" && (
+        <PlaceholderPlayer mensaje="🙏 Momento de reflexión" detalle="El anfitrión está liderando este momento" />
+      )}
+      {faseActual === "instrumento" && (
+        <PlaceholderPlayer mensaje="📋 Instrumento de Gobierno" detalle="Pronto verás las preguntas aquí" />
+      )}
+      {faseActual === "juego_ronda1" && (
+        <PlaceholderPlayer mensaje="🎮 ¡Empieza el juego!" detalle="Ronda 1 — ¿De dónde es eso?" />
+      )}
+      {faseActual === "juego_ronda2" && (
+        <PlaceholderPlayer mensaje="🖼️ Ronda 2" detalle="Adivina el... ¡Colombia!" />
+      )}
+      {faseActual === "juego_ronda3" && (
+        <PlaceholderPlayer mensaje="⚡ Ronda 3" detalle="¡Relámpago Colombiano!" />
+      )}
+      {faseActual === "leaderboard" && (
+        <PlaceholderPlayer mensaje="🏆 Tabla de líderes" detalle="Revisa tu posición en la pantalla principal" />
+      )}
+      {faseActual === "evaluacion" && (
+        <PlaceholderPlayer mensaje="✅ Evaluación final" detalle="Pronto verás las preguntas aquí" />
+      )}
+      {faseActual === "fin" && (
+        <div className="text-center flex flex-col gap-4">
+          <div className="text-6xl">🎉</div>
+          <h2 className="text-2xl font-bold text-yellow-400">¡Gracias por participar!</h2>
+          <p className="text-gray-400">La actividad ha finalizado</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PlaceholderPlayer({ mensaje, detalle }) {
+  return (
+    <div className="text-center flex flex-col gap-4">
+      <h2 className="text-2xl font-bold text-yellow-400">{mensaje}</h2>
+      <p className="text-gray-400">{detalle}</p>
+      <div className="flex gap-1 justify-center mt-4">
+        <span className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: "0ms"}}></span>
+        <span className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: "150ms"}}></span>
+        <span className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: "300ms"}}></span>
+      </div>
+    </div>
+  )
 }
