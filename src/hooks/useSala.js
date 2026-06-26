@@ -41,5 +41,10 @@ export function useSala() {
     }
   }
 
-  return { sala, cargando, iniciarSala, siguienteFase, faseAnterior }
+  // Vuelve al estado pre-sala (borra el nodo "sala" → muestra PantallaInicio)
+  async function resetSala() {
+    await set(ref(db, "sala"), null)
+  }
+
+  return { sala, cargando, iniciarSala, siguienteFase, faseAnterior, resetSala }
 }

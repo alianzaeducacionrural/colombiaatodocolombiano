@@ -2,9 +2,10 @@ import { useSala } from "../hooks/useSala"
 import { CONFIG } from "../data/actividad.config"
 import { QRCodeSVG as QRCode } from "qrcode.react"
 import { ReflexionHost } from "../phases/Reflexion"
+import { InstrumentoHost } from "../phases/Instrumento"
 
 export default function Host() {
-  const { sala, cargando, iniciarSala, siguienteFase, faseAnterior } = useSala()
+  const { sala, cargando, iniciarSala, siguienteFase, faseAnterior, resetSala } = useSala()
 
   if (cargando) return <Cargando />
 
@@ -12,12 +13,26 @@ export default function Host() {
     ? Object.values(sala.participantes)
     : []
 
+  function handleReiniciar() {
+    if (window.confirm("¿Reiniciar la actividad? Esto borrará las respuestas y los participantes tendrán que volver a registrarse.")) {
+      iniciarSala()
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-white font-sans">
 
       {/* Barra de control del anfitrión */}
       <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 px-6 py-3 flex items-center justify-between z-50">
         <div className="flex items-center gap-3">
+          {sala?.fase !== undefined && (
+            <button
+              onClick={handleReiniciar}
+              className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
+            >
+              ↺ Reiniciar
+            </button>
+          )}
           <span className="text-gray-400 text-sm">Fase actual:</span>
           <span className="bg-yellow-400 text-gray-950 text-sm font-bold px-3 py-1 rounded-full">
             {sala?.fase ?? "—"}
@@ -27,9 +42,9 @@ export default function Host() {
           </span>
         </div>
         <div className="flex gap-3">
-          {sala?.fase !== "lobby" && (
+          {sala?.fase && (
             <button
-              onClick={faseAnterior}
+              onClick={sala.fase === "lobby" ? resetSala : faseAnterior}
               className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
             >
               ← Anterior
@@ -58,7 +73,7 @@ export default function Host() {
         {(!sala || sala.fase === undefined) && <PantallaInicio onIniciar={iniciarSala} />}
         {sala?.fase === "lobby" && <PantallaLobby participantes={participantes} />}
         {sala?.fase === "reflexion" && <ReflexionHost />}
-        {sala?.fase === "instrumento" && <PlaceholderFase titulo="📋 Instrumento de Gobierno" />}
+       {sala?.fase === "instrumento" && <InstrumentoHost />}
         {sala?.fase === "juego_ronda1" && <PlaceholderFase titulo="🎮 Ronda 1 — ¿De dónde es eso?" />}
         {sala?.fase === "juego_ronda2" && <PlaceholderFase titulo="🖼️ Ronda 2 — Adivina el... ¡Colombia!" />}
         {sala?.fase === "juego_ronda3" && <PlaceholderFase titulo="⚡ Ronda 3 — Relámpago Colombiano" />}

@@ -2,9 +2,10 @@ import { useState } from "react"
 import { useParticipante } from "../hooks/useParticipante"
 import { CONFIG } from "../data/actividad.config"
 import { ReflexionPlayer } from "../phases/Reflexion"
+import { InstrumentoPlayer } from "../phases/Instrumento"
 
 export default function Player() {
-  const { faseActual, registrado, registrarme, enviarRespuesta } = useParticipante()
+  const { faseActual, registrado, registrarme, enviarRespuesta, nombre } = useParticipante()
   const [nombreInput, setNombreInput] = useState("")
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState("")
@@ -85,7 +86,10 @@ export default function Player() {
       )}
 
       {faseActual === "instrumento" && (
-        <PlaceholderPlayer mensaje="📋 Instrumento de Gobierno" detalle="Pronto verás las preguntas aquí" />
+        <InstrumentoPlayer 
+          enviarRespuesta={enviarRespuesta} 
+          nombre={nombre} 
+        />
       )}
       {faseActual === "juego_ronda1" && (
         <PlaceholderPlayer mensaje="🎮 ¡Empieza el juego!" detalle="Ronda 1 — ¿De dónde es eso?" />
