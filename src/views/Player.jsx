@@ -46,7 +46,7 @@ export default function Player() {
       <div className="h-screen bg-gray-950 flex flex-col items-center justify-center px-6 gap-5">
         <div className="text-center flex flex-col gap-2 mb-2">
           <p className="text-gray-400 text-base leading-relaxed">
-            Bienvenidos equipo de padrinos a las
+            Bienvenidos a las
           </p>
           <h2 className="text-2xl font-bold text-white">
             Actividades de Conjunto

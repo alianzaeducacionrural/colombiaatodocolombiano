@@ -149,7 +149,7 @@ function PantallaInicio() {
   return (
     <div className="h-full flex flex-col items-center justify-center px-10 py-6 gap-6">
       <div className="text-center">
-        <p className="text-gray-400 text-lg">Bienvenidos equipo de padrinos a las</p>
+        <p className="text-gray-400 text-lg">Bienvenidos a las</p>
         <p className="text-white text-2xl font-bold mt-1">Actividades de Conjunto</p>
         <div className="flex items-center justify-center gap-3 mt-2">
           <span className="text-yellow-400 text-2xl">✦</span>
