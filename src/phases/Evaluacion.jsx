@@ -37,13 +37,25 @@ export function EvaluacionHost() {
       setUsados([])
     }
 
+    // El ganador se decide de antemano y los pasos se calculan para que la luz
+    // termine exactamente sobre él: quien queda iluminado es quien responde.
+    const n = participantes.length
+    const ganador = disponibles[Math.floor(Math.random() * disponibles.length)]
+    const idxGanador = participantes.findIndex(p => p.id === ganador.id)
+    let pos = iluminado % n
+    const base = 25 + Math.floor(Math.random() * 15)
+    const total = base + ((((idxGanador - (pos + base)) % n) + n) % n)
+
     let iter = 0
-    const total = 25 + Math.floor(Math.random() * 15)
+    function avanzar() {
+      pos = (pos + 1) % n
+      iter++
+      setIluminado(pos)
+    }
 
     // Fase rápida
     const fastInterval = setInterval(() => {
-      setIluminado(prev => (prev + 1) % participantes.length)
-      iter++
+      avanzar()
       if (iter > total * 0.6) {
         clearInterval(fastInterval)
         spinSlow()
@@ -54,9 +66,6 @@ export function EvaluacionHost() {
       let vel = 150
       function step() {
         if (iter >= total) {
-          const ganador = disponibles[Math.floor(Math.random() * disponibles.length)]
-          const idx = participantes.findIndex(p => p.id === ganador.id)
-          setIluminado(idx)
           setSeleccionado(ganador)
           setUsados(prev => [...prev, ganador.id])
           setFase("seleccionado")
@@ -68,8 +77,7 @@ export function EvaluacionHost() {
           })
           return
         }
-        setIluminado(prev => (prev + 1) % participantes.length)
-        iter++
+        avanzar()
         vel += 40
         timerRef.current = setTimeout(step, vel)
       }
