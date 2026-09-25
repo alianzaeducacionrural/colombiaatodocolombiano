@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { db } from "../config/firebase"
-import { ref, onValue, update, push, get } from "firebase/database"
+import { ref, onValue, update, push } from "firebase/database"
 
 export function useParticipante() {
   const [userId, setUserId] = useState(
@@ -14,11 +14,12 @@ export function useParticipante() {
     () => !!sessionStorage.getItem("userId")
   )
 
-  // Si hay sesión guardada, verifica que el userId aún exista en Firebase
-  // (si la sala fue reiniciada, el participante ya no existe → limpiar sesión)
+  // Vigila que el userId siga existiendo en Firebase: si la sala se reinicia
+  // (el participante desaparece) se limpia la sesión y vuelve al registro,
+  // tanto al cargar la página como con la app ya abierta.
   useEffect(() => {
     if (!userId) return
-    get(ref(db, `sala/participantes/${userId}`)).then(snap => {
+    const unsub = onValue(ref(db, `sala/participantes/${userId}`), snap => {
       if (!snap.exists()) {
         sessionStorage.removeItem("userId")
         sessionStorage.removeItem("nombre")
@@ -27,7 +28,8 @@ export function useParticipante() {
         setRegistrado(false)
       }
     })
-  }, [])
+    return () => unsub()
+  }, [userId])
 
   // Escucha la fase actual de la sala
   useEffect(() => {
