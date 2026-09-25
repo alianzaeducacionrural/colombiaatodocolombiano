@@ -1,19 +1,44 @@
 import { useState, useEffect } from "react"
 import { db } from "../config/firebase"
-import { ref, onValue } from "firebase/database"
+import { ref, onValue, set, update } from "firebase/database"
 import WordCloud from "react-d3-cloud"
 import { CONFIG } from "../data/actividad.config"
+
+const SOC_REF = "sala/reflexion_socializando"
 
 // Vista del ANFITRIÓN
 export function ReflexionHost({ onActivar }) {
   const [palabras, setPalabras] = useState([])
+  const [aportes, setAportes] = useState([]) // [{ id, nombre, palabra }] de quienes enviaron palabra
   const [mostrarWordCloud, setMostrarWordCloud] = useState(false)
+  const [soc, setSoc] = useState(null)
+
+  useEffect(() => {
+    const unsub = onValue(ref(db, SOC_REF), (snap) => setSoc(snap.val()))
+    return () => unsub()
+  }, [])
+
+  // Elige hasta 2 personas al azar entre quienes enviaron una palabra
+  function elegirAlAzar() {
+    const pool = [...aportes]
+    const items = []
+    while (items.length < 2 && pool.length > 0) {
+      items.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0])
+    }
+    set(ref(db, SOC_REF), { activo: true, paso: 0, items })
+  }
 
   useEffect(() => {
     const respRef = ref(db, "sala/respuestas/reflexion")
     const unsub = onValue(respRef, (snapshot) => {
       const data = snapshot.val()
       if (!data) return
+
+      setAportes(
+        Object.entries(data)
+          .filter(([, v]) => v?.respuesta?.trim())
+          .map(([id, v]) => ({ id, nombre: v.nombre, palabra: v.respuesta.trim() }))
+      )
 
       const conteo = {}
       Object.values(data).forEach(({ respuesta }) => {
@@ -30,6 +55,59 @@ export function ReflexionHost({ onActivar }) {
     })
     return () => unsub()
   }, [])
+
+  // --- Modo SOCIALIZAR: 2 personas al azar explican su palabra, luego la pregunta del video ---
+  if (soc?.activo) {
+    const items = soc.items || []
+    const paso = soc.paso || 0
+    const enPregunta = paso >= items.length
+    const actual = items[paso]
+
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-8 px-10 py-12 bg-black/50">
+        {enPregunta ? (
+          <>
+            <p className="text-yellow-400 text-2xl font-bold uppercase tracking-widest">
+              Pregunta sobre el video 🎬
+            </p>
+            <div className="w-full max-w-3xl bg-gray-900 border border-yellow-400/40 rounded-3xl px-10 py-12 text-center shadow-2xl shadow-yellow-400/10">
+              <p className="text-white text-4xl font-bold leading-snug">
+                {CONFIG.reflexion.preguntaVideo}
+              </p>
+            </div>
+            <p className="text-gray-400 text-lg">Respondan en voz alta 🎙️</p>
+          </>
+        ) : (
+          <>
+            <p className="text-yellow-400 text-2xl font-bold uppercase tracking-widest">
+              Tu palabra {paso + 1} de {items.length}
+            </p>
+            <div className="w-full max-w-2xl bg-yellow-400 text-gray-950 rounded-3xl px-10 py-12 text-center shadow-2xl shadow-yellow-400/20">
+              <p className={`${(actual?.palabra?.length ?? 0) > 14 ? "text-4xl" : "text-6xl"} font-black leading-tight break-words`}>
+                “{actual?.palabra}”
+              </p>
+              <div className="flex items-center justify-center gap-3 mt-8 pt-6 border-t border-gray-950/20">
+                <div className="w-12 h-12 rounded-full bg-gray-950/15 flex items-center justify-center text-lg font-bold">
+                  {actual?.nombre?.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-2xl font-bold">{actual?.nombre}</span>
+              </div>
+            </div>
+            <p className="text-white text-2xl font-medium text-center">
+              {CONFIG.reflexion.preguntaPalabra}
+            </p>
+          </>
+        )}
+
+        <button
+          onClick={() => (enPregunta ? set(ref(db, SOC_REF), null) : update(ref(db, SOC_REF), { paso: paso + 1 }))}
+          className="bg-yellow-400 hover:bg-yellow-300 text-gray-950 font-bold text-lg px-10 py-3 rounded-2xl transition-all hover:scale-105 shadow-lg"
+        >
+          {enPregunta ? "Volver a la nube" : paso + 1 >= items.length ? "Siguiente: pregunta del video →" : "Siguiente →"}
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="h-full flex flex-col items-center justify-center gap-6 px-10 py-8">
@@ -104,6 +182,14 @@ export function ReflexionHost({ onActivar }) {
           <p className="text-gray-500 text-sm">
             {palabras.length} palabra{palabras.length !== 1 ? "s" : ""} recibida{palabras.length !== 1 ? "s" : ""}
           </p>
+
+          <button
+            onClick={elegirAlAzar}
+            disabled={aportes.length === 0}
+            className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:hover:bg-purple-600 text-white font-bold text-lg px-8 py-3 rounded-2xl transition-all hover:scale-105 disabled:hover:scale-100 shadow-lg"
+          >
+            Elegir 2 personas al azar 🎲
+          </button>
         </>
       )}
     </div>
@@ -111,11 +197,17 @@ export function ReflexionHost({ onActivar }) {
 }
 
 // Vista del PARTICIPANTE
-export function ReflexionPlayer({ enviarRespuesta }) {
+export function ReflexionPlayer({ enviarRespuesta, userId }) {
   const [texto, setTexto] = useState("")
   const [enviado, setEnviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [videoTerminado, setVideoTerminado] = useState(false)
+  const [soc, setSoc] = useState(null)
+
+  useEffect(() => {
+    const unsub = onValue(ref(db, SOC_REF), (snap) => setSoc(snap.val()))
+    return () => unsub()
+  }, [])
 
   // Escucha si el anfitrión activó la pregunta
   useEffect(() => {
@@ -134,6 +226,63 @@ export function ReflexionPlayer({ enviarRespuesta }) {
     await enviarRespuesta("reflexion", palabra)
     setEnviado(true)
     setEnviando(false)
+  }
+
+  // --- Modo SOCIALIZAR (tiene prioridad sobre el resto) ---
+  if (soc?.activo) {
+    const items = soc.items || []
+    const paso = soc.paso || 0
+    const actual = items[paso]
+    const miPalabra = items.find((it) => it.id === userId)?.palabra
+    const esMiTurno = actual?.id === userId
+
+    if (paso >= items.length) {
+      return (
+        <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+          <div className="text-6xl">🎬</div>
+          <h2 className="text-2xl font-bold text-yellow-400">Pregunta sobre el video</h2>
+          <div className="bg-gray-900 border border-yellow-400/40 rounded-2xl px-6 py-5 max-w-sm w-full">
+            <p className="text-white text-xl font-bold leading-snug">{CONFIG.reflexion.preguntaVideo}</p>
+          </div>
+          <p className="text-gray-400">Responde en voz alta 🎙️</p>
+        </div>
+      )
+    }
+
+    if (esMiTurno) {
+      return (
+        <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-6 px-6 text-center">
+          <div className="text-7xl animate-bounce">🎤</div>
+          <h2 className="text-3xl font-bold text-yellow-400">¡Te tocó!</h2>
+          <div className="bg-yellow-400 text-gray-950 rounded-2xl px-6 py-5 max-w-sm w-full shadow-xl">
+            <p className={`${(miPalabra?.length ?? 0) > 12 ? "text-2xl" : "text-3xl"} font-black break-words`}>
+              “{miPalabra}”
+            </p>
+          </div>
+          <p className="text-white text-lg">{CONFIG.reflexion.preguntaPalabra}</p>
+        </div>
+      )
+    }
+
+    if (miPalabra) {
+      return (
+        <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <div className="text-6xl animate-pulse">⏳</div>
+          <h2 className="text-2xl font-bold text-yellow-400">Espera tu turno...</h2>
+          <p className="text-gray-400">
+            Pronto te preguntarán por tu palabra “{miPalabra}”
+          </p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="text-6xl">👂</div>
+        <h2 className="text-2xl font-bold text-yellow-400">Escucha a {actual?.nombre}</h2>
+        <p className="text-gray-400">Explica por qué escogió “{actual?.palabra}”</p>
+      </div>
+    )
   }
 
   if (enviado) {

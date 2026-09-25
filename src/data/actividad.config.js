@@ -19,6 +19,8 @@ export const CONFIG = {
     nombre: "El espejo sin filtros 🪞",
     videoId: "g7utFwWvez8",
     instruccion: "Describe en una palabra… ¿qué te dejó el video?",
+    preguntaPalabra: "Cuéntanos: ¿por qué escogiste esta palabra?",
+    preguntaVideo: "¿Qué mensaje te dejó el video para tu trabajo?",
     videoStart: 0,
     videoEnd: 163,
   },

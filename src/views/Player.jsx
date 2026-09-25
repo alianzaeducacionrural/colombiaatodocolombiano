@@ -107,7 +107,7 @@ export default function Player() {
 
   // Fase de reflexión: ReflexionPlayer ya trae su propio layout de pantalla completa
   if (faseActual === "reflexion") {
-    return <ReflexionPlayer enviarRespuesta={enviarRespuesta} />
+    return <ReflexionPlayer enviarRespuesta={enviarRespuesta} userId={userId} />
   }
 
   // Pantallas según la fase actual
