@@ -397,10 +397,10 @@ export function Ronda3Host() {
         )}
         {fase === "resultado" && esUltima && (
           <button
-            onClick={() => update(ref(db, "sala"), { fase: "leaderboard" })}
+            onClick={() => update(ref(db, "sala"), { fase: "leaderboard_parcial_3" })}
             className="bg-green-500 hover:bg-green-400 text-white font-bold px-8 py-3 rounded-xl transition"
           >
-            Ver resultados finales 🏆
+            Ver resultados parciales →
           </button>
         )}
       </div>

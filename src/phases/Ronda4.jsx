@@ -1,0 +1,327 @@
+import { useState, useEffect, useRef } from "react"
+import { db } from "../config/firebase"
+import { ref, onValue, update, get } from "firebase/database"
+import { CONFIG } from "../data/actividad.config"
+
+const ronda = CONFIG.rondas[3]
+const LETRAS = ["A", "B", "C", "D"]
+
+// ── ANFITRIÓN ──────────────────────────────────────────────
+export function Ronda4Host() {
+  const [preguntaIdx, setPreguntaIdx] = useState(0)
+  const [tiempo, setTiempo] = useState(ronda.tiempo)
+  const [fase, setFase] = useState("respondiendo") // "respondiendo" | "resultado"
+  const [respuestas, setRespuestas] = useState({})
+  const [participantes, setParticipantes] = useState({})
+  const timerRef = useRef(null)
+  const resueltoRef = useRef(false) // evita puntuar dos veces la misma pregunta
+
+  const pregunta = ronda.preguntas[preguntaIdx]
+  const esUltima = preguntaIdx === ronda.preguntas.length - 1
+
+  // Escuchar participantes
+  useEffect(() => {
+    const unsub = onValue(ref(db, "sala/participantes"), snap => {
+      setParticipantes(snap.val() || {})
+    })
+    return () => unsub()
+  }, [])
+
+  // Al montar: abrir la pregunta inicial desde el primer segundo
+  useEffect(() => {
+    update(ref(db, "sala/ronda4_estado"), {
+      preguntaIdx: 0,
+      abierto: true,
+      inicio: Date.now(),
+    })
+  }, [])
+
+  // Escuchar respuestas de la pregunta actual
+  useEffect(() => {
+    const unsub = onValue(ref(db, `sala/respuestas/ronda4/p${preguntaIdx}`), snap => {
+      setRespuestas(snap.val() || {})
+    })
+    return () => unsub()
+  }, [preguntaIdx])
+
+  // Auto-revelar cuando todos respondieron
+  useEffect(() => {
+    const total = Object.keys(participantes).length
+    const respondieron = Object.keys(respuestas).length
+    if (total > 0 && respondieron >= total && fase === "respondiendo") {
+      mostrarResultado()
+    }
+  }, [respuestas, participantes, fase])
+
+  // Timer: arranca al cambiar de pregunta; al llegar a 0 → resultado
+  useEffect(() => {
+    resueltoRef.current = false
+    setFase("respondiendo")
+    setTiempo(ronda.tiempo)
+    setRespuestas({})
+    timerRef.current = setInterval(() => {
+      setTiempo(t => {
+        if (t <= 1) {
+          clearInterval(timerRef.current)
+          mostrarResultado()
+          return 0
+        }
+        return t - 1
+      })
+    }, 1000)
+    return () => clearInterval(timerRef.current)
+  }, [preguntaIdx])
+
+  async function mostrarResultado() {
+    if (resueltoRef.current) return // ya se resolvió esta pregunta
+    resueltoRef.current = true
+    clearInterval(timerRef.current)
+    await update(ref(db, "sala/ronda4_estado"), { abierto: false })
+
+    // Leer datos frescos de Firebase (evita el closure obsoleto del timer)
+    const [respSnap, partSnap, estadoSnap] = await Promise.all([
+      get(ref(db, `sala/respuestas/ronda4/p${preguntaIdx}`)),
+      get(ref(db, "sala/participantes")),
+      get(ref(db, "sala/ronda4_estado")),
+    ])
+    const respFresh = respSnap.val() || {}
+    const partFresh = partSnap.val() || {}
+    const inicio = estadoSnap.val()?.inicio ?? (Date.now() - ronda.tiempo * 1000)
+    const correcta = pregunta.correcta
+
+    const updates = {}
+    Object.entries(respFresh).forEach(([userId, data]) => {
+      if (data.opcion === correcta) {
+        const tardanza = Math.min((data.timestamp - inicio) / 1000, ronda.tiempo)
+        const pts = Math.round(ronda.puntosMax * (1 - tardanza / ronda.tiempo) * 0.8 + ronda.puntosMax * 0.2)
+        updates[`sala/participantes/${userId}/puntaje`] =
+          (partFresh[userId]?.puntaje || 0) + pts
+      }
+    })
+    if (Object.keys(updates).length > 0) {
+      await update(ref(db), updates)
+    }
+    setFase("resultado")
+  }
+
+  async function siguientePregunta() {
+    // El efecto [preguntaIdx] reinicia fase, timer y respuestas
+    await update(ref(db, "sala/ronda4_estado"), {
+      preguntaIdx: preguntaIdx + 1,
+      abierto: true,
+      inicio: Date.now(),
+    })
+    setPreguntaIdx(preguntaIdx + 1)
+  }
+
+  const totalParticipantes = Object.keys(participantes).length
+  const totalRespondieron = Object.keys(respuestas).length
+
+  return (
+    <div className="h-full flex flex-col items-center justify-center gap-6 px-10 py-12">
+
+      {/* Header */}
+      <div className="text-center">
+        <p className="text-gray-500 text-sm uppercase tracking-widest">
+          {ronda.nombre} — Pregunta {preguntaIdx + 1} de {ronda.preguntas.length}
+        </p>
+      </div>
+
+      {/* Tarjeta principal */}
+      <div className="w-full max-w-3xl bg-gray-900 rounded-3xl border border-gray-800 p-10 flex flex-col gap-6">
+
+        <h2 className="text-2xl font-bold text-white text-center leading-snug">
+          {pregunta.texto}
+        </h2>
+
+        {/* Opciones — apiladas por ser texto largo; se colorean en "resultado" */}
+        <div className="w-full flex flex-col gap-3">
+          {pregunta.opciones.map((op, i) => {
+            const correcta = fase === "resultado" && i === pregunta.correcta
+            const incorrecta = fase === "resultado" && i !== pregunta.correcta
+            return (
+              <div
+                key={i}
+                className={`rounded-xl px-5 py-3 flex items-start gap-3 border transition-all ${
+                  correcta
+                    ? "bg-green-500/20 border-green-500 text-green-300"
+                    : incorrecta
+                    ? "bg-gray-800 border-gray-700 text-gray-500"
+                    : "bg-gray-800 border-gray-700 text-white"
+                }`}
+              >
+                <span className={`font-bold text-lg w-7 shrink-0 ${correcta ? "text-green-400" : "text-yellow-400"}`}>
+                  {LETRAS[i]}
+                </span>
+                <span className="text-base leading-snug">{op}</span>
+                {correcta && <span className="ml-auto shrink-0">✅</span>}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Timer */}
+        {fase === "respondiendo" && (
+          <div className="flex flex-col items-center gap-2 w-full">
+            <div className="w-full bg-gray-800 rounded-full h-3">
+              <div
+                className="bg-yellow-400 h-3 rounded-full transition-all duration-1000"
+                style={{ width: `${(tiempo / ronda.tiempo) * 100}%` }}
+              />
+            </div>
+            <div className="flex justify-between w-full text-sm">
+              <span className="text-gray-400">
+                {totalRespondieron} de {totalParticipantes} respondieron
+              </span>
+              <span className={`font-bold ${tiempo <= 5 ? "text-red-400" : "text-yellow-400"}`}>
+                {tiempo}s
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Resultado */}
+        {fase === "resultado" && (
+          <div className="bg-gray-800 rounded-2xl p-4 w-full">
+            <p className="text-gray-400 text-sm mb-2">Respuesta correcta:</p>
+            <p className="text-green-400 font-bold text-lg">
+              {LETRAS[pregunta.correcta]}. {pregunta.opciones[pregunta.correcta]}
+            </p>
+            <p className="text-gray-500 text-sm mt-2">
+              {Object.values(respuestas).filter(r => r.opcion === pregunta.correcta).length} acertaron
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Botones de control */}
+      <div className="flex gap-3">
+        {fase === "resultado" && !esUltima && (
+          <button
+            onClick={siguientePregunta}
+            className="bg-yellow-400 hover:bg-yellow-300 text-gray-950 font-bold px-8 py-3 rounded-xl transition"
+          >
+            Siguiente pregunta →
+          </button>
+        )}
+        {fase === "resultado" && esUltima && (
+          <button
+            onClick={() => update(ref(db, "sala"), { fase: "leaderboard" })}
+            className="bg-green-500 hover:bg-green-400 text-white font-bold px-8 py-3 rounded-xl transition"
+          >
+            Ver resultados finales 🏆
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── PARTICIPANTE ───────────────────────────────────────────
+export function Ronda4Player({ userId, nombre }) {
+  const [estado, setEstado] = useState(null)
+  const [seleccion, setSeleccion] = useState(null)
+  const [enviado, setEnviado] = useState(false)
+  const [tiempo, setTiempo] = useState(ronda.tiempo)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    const unsub = onValue(ref(db, "sala/ronda4_estado"), snap => {
+      setEstado(snap.val())
+    })
+    return () => unsub()
+  }, [])
+
+  // Reinicia la selección al cambiar de pregunta
+  useEffect(() => {
+    setSeleccion(null)
+    setEnviado(false)
+  }, [estado?.preguntaIdx])
+
+  // Timer sincronizado con el host vía estado.inicio
+  useEffect(() => {
+    if (!estado?.inicio) return
+    const tick = () => {
+      const transcurrido = Math.floor((Date.now() - estado.inicio) / 1000)
+      const restante = Math.max(0, ronda.tiempo - transcurrido)
+      setTiempo(restante)
+      if (restante <= 0) clearInterval(timerRef.current)
+    }
+    tick()
+    timerRef.current = setInterval(tick, 1000)
+    return () => clearInterval(timerRef.current)
+  }, [estado?.inicio])
+
+  async function handleSeleccion(idx) {
+    if (enviado || !estado?.abierto) return
+    setSeleccion(idx)
+    setEnviado(true)
+    clearInterval(timerRef.current)
+    await update(ref(db, `sala/respuestas/ronda4/p${estado.preguntaIdx}/${userId}`), {
+      opcion: idx,
+      nombre,
+      timestamp: Date.now(),
+    })
+  }
+
+  // Ya respondió
+  if (enviado) {
+    return (
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="text-5xl">✅</div>
+        <h2 className="text-2xl font-bold text-yellow-400">¡Respondiste!</h2>
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl px-6 py-4">
+          <p className="text-gray-400 text-sm">Tu respuesta:</p>
+          <p className="text-white text-lg font-bold mt-1">
+            {LETRAS[seleccion]}. {ronda.preguntas[estado?.preguntaIdx]?.opciones[seleccion]}
+          </p>
+        </div>
+        <p className="text-gray-500 text-sm">Espera el resultado en pantalla…</p>
+      </div>
+    )
+  }
+
+  const pregunta = ronda.preguntas[estado?.preguntaIdx ?? 0]
+  const habilitado = estado?.abierto === true
+  return (
+    <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-5 py-6">
+      <div className="text-center">
+        <p className="text-gray-500 text-sm">{ronda.nombre}</p>
+        <h2 className="text-lg font-bold text-white mt-1 leading-snug">{pregunta?.texto}</h2>
+      </div>
+
+      {/* Timer sincronizado */}
+      <div className="w-full max-w-sm">
+        <div className="w-full bg-gray-800 rounded-full h-2">
+          <div
+            className="bg-yellow-400 h-2 rounded-full transition-all duration-1000"
+            style={{ width: `${(tiempo / ronda.tiempo) * 100}%` }}
+          />
+        </div>
+        <p className={`text-right text-sm mt-1 font-bold ${tiempo <= 5 ? "text-red-400" : "text-yellow-400"}`}>
+          {tiempo}s
+        </p>
+      </div>
+      {!habilitado && (
+        <p className="text-gray-500 text-sm text-center">Espera a que el anfitrión abra la pregunta…</p>
+      )}
+
+      {/* Opciones — apiladas por ser texto largo */}
+      <div className="w-full max-w-sm flex flex-col gap-3">
+        {pregunta?.opciones.map((op, i) => (
+          <button
+            key={i}
+            onClick={() => handleSeleccion(i)}
+            disabled={!habilitado || enviado}
+            className="bg-gray-800 hover:bg-gray-700 active:scale-95 border border-gray-700
+                       text-white rounded-2xl px-4 py-3 flex items-start gap-3 text-left
+                       transition-all disabled:opacity-50 disabled:hover:bg-gray-800 disabled:active:scale-100"
+          >
+            <span className="text-yellow-400 font-bold text-base shrink-0">{LETRAS[i]}</span>
+            <span className="text-sm leading-snug">{op}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}

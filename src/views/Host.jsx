@@ -9,6 +9,7 @@ import { InstrumentoHost } from "../phases/Instrumento"
 import { Ronda1Host } from "../phases/Ronda1"
 import { Ronda2Host } from "../phases/Ronda2"
 import { Ronda3Host } from "../phases/Ronda3"
+import { Ronda4Host } from "../phases/Ronda4"
 import { LeaderboardHost, LeaderboardParcial } from "../phases/Leaderboard"
 import { EvaluacionHost } from "../phases/Evaluacion"
 import { PreFaseHost } from "../phases/PreFase"
@@ -17,6 +18,7 @@ const FASES_CON_PREFASE = [
   "juego_ronda1",
   "juego_ronda2",
   "juego_ronda3",
+  "juego_ronda4",
 ]
 
 export default function Host() {
@@ -83,6 +85,15 @@ export default function Host() {
               />
             )}
             {sala?.fase === "juego_ronda3" && <Ronda3Host />}
+            {sala?.fase === "leaderboard_parcial_3" && (
+              <LeaderboardParcial
+                titulo="🏆 Resultados — Ronda 3"
+                subtitulo="¿Cómo vamos hasta ahora?"
+                onSiguiente={() => update(ref(db, "sala"), { fase: "juego_ronda4" })}
+                labelBoton="Continuar a Ronda 4 →"
+              />
+            )}
+            {sala?.fase === "juego_ronda4" && <Ronda4Host />}
             {sala?.fase === "leaderboard" && <LeaderboardHost />}
             {sala?.fase === "evaluacion" && <EvaluacionHost />}
             {sala?.fase === "fin" && (

@@ -15,6 +15,8 @@ export const FASES = [
   "juego_ronda2",
   "leaderboard_parcial_2",
   "juego_ronda3",
+  "leaderboard_parcial_3",
+  "juego_ronda4",
   "leaderboard",
   "evaluacion",
   "fin"

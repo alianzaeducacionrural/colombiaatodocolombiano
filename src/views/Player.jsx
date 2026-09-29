@@ -7,6 +7,7 @@ import { InstrumentoPlayer } from "../phases/Instrumento"
 import { Ronda1Player } from "../phases/Ronda1"
 import { Ronda2Player } from "../phases/Ronda2"
 import { Ronda3Player } from "../phases/Ronda3"
+import { Ronda4Player } from "../phases/Ronda4"
 import { LeaderboardPlayer } from "../phases/Leaderboard"
 import { EvaluacionPlayer } from "../phases/Evaluacion"
 import { PreFasePlayer } from "../phases/PreFase"
@@ -147,7 +148,13 @@ export default function Player() {
           nombre={nombre}
         />
       )}
-      {(faseActual === "leaderboard_parcial_1" || faseActual === "leaderboard_parcial_2") && (
+      {faseActual === "juego_ronda4" && (
+        <Ronda4Player
+          userId={userId}
+          nombre={nombre}
+        />
+      )}
+      {(faseActual === "leaderboard_parcial_1" || faseActual === "leaderboard_parcial_2" || faseActual === "leaderboard_parcial_3") && (
         <LeaderboardPlayer userId={userId} />
       )}
       {faseActual === "leaderboard" && (

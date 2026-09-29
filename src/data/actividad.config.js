@@ -154,6 +154,57 @@ export const CONFIG = {
         },
       ],
     },
+    {
+      id: "ronda4",
+      nombre: "Escuela Nueva 📘",
+      descripcion: "Preguntas individuales sobre el modelo pedagógico",
+      tipo: "individual",
+      tiempo: 25,
+      puntosPorVelocidad: true,
+      puntosMax: 1000,
+      preguntas: [
+        {
+          texto: "¿Cuáles son los componentes del modelo pedagógico Escuela Nueva?",
+          opciones: [
+            "Administrativo, curricular, capacitación y comunitario.",
+            "Pedagógico, financiero, tecnológico y administrativo.",
+            "Académico, investigativo, administrativo y cultural.",
+            "Curricular, evaluativo, disciplinar y tecnológico.",
+          ],
+          correcta: 0,
+        },
+        {
+          texto: "¿Cuáles son los principios del modelo pedagógico Escuela Nueva?",
+          opciones: [
+            "Promoción flexible, relación escuela-comunidad y aprendizaje activo y significativo basado en las interacciones.",
+            "Enseñanza tradicional, evaluación sumativa y promoción anual.",
+            "Competitividad, disciplina, rendimiento académico y evaluación estandarizada.",
+            "Transmisión de contenidos, trabajo individual y control permanente del aprendizaje.",
+          ],
+          correcta: 0,
+        },
+        {
+          texto: "¿Qué se entiende por Trayectoria Educativa Completa?",
+          opciones: [
+            "El recorrido de una persona por las diferentes etapas y niveles educativos, garantizando acceso, permanencia, aprendizaje, tránsito y culminación.",
+            "El cumplimiento de los contenidos establecidos para cada grado escolar.",
+            "La permanencia del estudiante en una institución educativa hasta finalizar la educación media.",
+            "La posibilidad de que un estudiante avance de grado según sus resultados académicos.",
+          ],
+          correcta: 0,
+        },
+        {
+          texto: "¿Cuál de las siguientes estrategias es coherente con el modelo Escuela Nueva?",
+          opciones: [
+            "El aprendizaje cooperativo, el trabajo autónomo, las guías de aprendizaje y la participación activa del estudiante.",
+            "La clase magistral como estrategia principal y el docente como único transmisor del conocimiento.",
+            "La memorización de contenidos y la evaluación exclusivamente mediante pruebas escritas.",
+            "La enseñanza homogénea, independientemente del contexto y ritmo de aprendizaje de los estudiantes.",
+          ],
+          correcta: 0,
+        },
+      ],
+    },
   ],
 
   url_jugar: "https://alianzaeducacionrural.github.io/colombiaatodocolombiano/jugar",
