@@ -3,9 +3,11 @@ import { db } from "../config/firebase"
 import { ref, onValue, update, set } from "firebase/database"
 
 const PREGUNTAS_EVAL = [
-  "¿Se lograron las evidencias de aprendizaje propuestas?",
-  "¿Qué fue lo que más te gustó de estas actividades de conjunto?",
-  "¿Qué oportunidad de mejora ves para estas actividades?",
+  "¿Qué estrategia vivenciada hoy llevaría a mi práctica como docente universitario y cómo la adaptaría al contexto de La Universidad en el Campo?",
+  "¿Qué aprendizaje de la actividad considero más significativo para mi práctica docente y por qué?",
+  "¿Qué aportó el trabajo individual y colectivo a mi experiencia de aprendizaje durante la actividad y cómo podría incorporarlo en mis espacios de formación?",
+  "¿Qué aspecto de la actividad transformaría o fortalecería para favorecer mejores experiencias de aprendizaje con los estudiantes de La Universidad en el Campo y por qué?",
+  "Después de vivir esta experiencia, ¿qué idea o reflexión me llevo sobre la manera de enseñar y aprender en el contexto de La Universidad en el Campo?",
 ]
 
 export function EvaluacionHost() {
