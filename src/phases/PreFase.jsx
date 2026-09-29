@@ -18,7 +18,7 @@ const PREFASES = {
     nombre: "Instrumento de Gobierno",
     subtitulo: "El reto de hoy",
     instrucciones: [
-      "Piensa en un reto laboral que quieres asumir hoy",
+      "Piensa en un reto personal que quieres asumir hoy",
       "Escríbelo en tu celular con honestidad",
       "Algunos compañeros compartirán su reto en voz alta",
     ],

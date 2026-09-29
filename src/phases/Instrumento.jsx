@@ -119,7 +119,7 @@ export function InstrumentoHost({ onAvanzar }) {
       <div className="text-center">
         <h2 className="text-4xl font-bold text-yellow-400">⚡ ¡El reto de hoy!</h2>
         <p className="text-gray-400 mt-2 text-xl">
-          ¿Cuál es tu reto laboral para esta jornada?
+          ¿Cuál es tu reto personal para esta jornada?
         </p>
       </div>
 
@@ -304,7 +304,7 @@ export function InstrumentoPlayer({ enviarRespuesta, nombre, userId }) {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-yellow-400">⚡ ¡El reto de hoy!</h2>
         <p className="text-gray-300 mt-3 text-base leading-relaxed">
-          ¿Cuál es el reto laboral más importante que quieres asumir hoy?
+          ¿Cuál es el reto personal más importante que quieres asumir hoy?
         </p>
       </div>
 
