@@ -94,18 +94,15 @@ export function ReflexionHost({ onActivar }) {
               Pregunta sobre el video 🎬
             </p>
             <div className="w-full max-w-3xl bg-gray-900 border border-yellow-400/40 rounded-3xl px-10 py-12 text-center shadow-2xl shadow-yellow-400/10">
-              <p className="text-white text-4xl font-bold leading-snug">
-                {CONFIG.reflexion.preguntaVideo}
-              </p>
+              {soc.preguntaPersonaNombre ? (
+                <p className="text-white text-4xl font-bold leading-snug">
+                  <span className="text-yellow-400">{soc.preguntaPersonaNombre}</span>, {CONFIG.reflexion.preguntaVideo}
+                </p>
+              ) : (
+                <p className="text-gray-500 text-2xl">Elegiendo a alguien…</p>
+              )}
             </div>
-            {soc.preguntaPersonaNombre ? (
-              <p className="text-2xl text-center">
-                <span className="text-gray-400">Le toca responder: </span>
-                <span className="text-yellow-400 font-bold">{soc.preguntaPersonaNombre}</span>
-              </p>
-            ) : (
-              <p className="text-gray-500 text-lg">Elegiendo a alguien…</p>
-            )}
+            <p className="text-gray-400 text-lg">Responde en voz alta 🎙️</p>
           </>
         ) : (
           <>
