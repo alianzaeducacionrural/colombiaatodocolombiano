@@ -10,6 +10,7 @@ const SOC_REF = "sala/reflexion_socializando"
 export function ReflexionHost({ onActivar }) {
   const [palabras, setPalabras] = useState([])
   const [aportes, setAportes] = useState([]) // [{ id, nombre, palabra }] de quienes enviaron palabra
+  const [participantes, setParticipantes] = useState([])
   const [mostrarWordCloud, setMostrarWordCloud] = useState(false)
   const [soc, setSoc] = useState(null)
 
@@ -17,6 +18,28 @@ export function ReflexionHost({ onActivar }) {
     const unsub = onValue(ref(db, SOC_REF), (snap) => setSoc(snap.val()))
     return () => unsub()
   }, [])
+
+  useEffect(() => {
+    const unsub = onValue(ref(db, "sala/participantes"), (snap) => {
+      const data = snap.val() || {}
+      setParticipantes(Object.entries(data).map(([id, p]) => ({ id, ...p })))
+    })
+    return () => unsub()
+  }, [])
+
+  // Al llegar a la pregunta del video, asigna automáticamente (sin ruleta) a
+  // alguien al azar para que la responda — dando preferencia a quien aún no
+  // explicó su palabra, para que participe gente distinta.
+  useEffect(() => {
+    const items = soc?.items || []
+    const enPregunta = soc?.activo && (soc.paso || 0) >= items.length
+    if (!enPregunta || soc.preguntaPersonaId || participantes.length === 0) return
+    const usadosIds = items.map((it) => it.id)
+    let pool = participantes.filter((p) => !usadosIds.includes(p.id))
+    if (pool.length === 0) pool = participantes
+    const ganador = pool[Math.floor(Math.random() * pool.length)]
+    update(ref(db, SOC_REF), { preguntaPersonaId: ganador.id, preguntaPersonaNombre: ganador.nombre })
+  }, [soc, participantes])
 
   // Elige hasta 2 personas al azar entre quienes enviaron una palabra
   function elegirAlAzar() {
@@ -75,7 +98,14 @@ export function ReflexionHost({ onActivar }) {
                 {CONFIG.reflexion.preguntaVideo}
               </p>
             </div>
-            <p className="text-gray-400 text-lg">Respondan en voz alta 🎙️</p>
+            {soc.preguntaPersonaNombre ? (
+              <p className="text-2xl text-center">
+                <span className="text-gray-400">Le toca responder: </span>
+                <span className="text-yellow-400 font-bold">{soc.preguntaPersonaNombre}</span>
+              </p>
+            ) : (
+              <p className="text-gray-500 text-lg">Elegiendo a alguien…</p>
+            )}
           </>
         ) : (
           <>
@@ -237,14 +267,25 @@ export function ReflexionPlayer({ enviarRespuesta, userId }) {
     const esMiTurno = actual?.id === userId
 
     if (paso >= items.length) {
+      const meTocaVideo = soc.preguntaPersonaId === userId
       return (
         <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
-          <div className="text-6xl">🎬</div>
-          <h2 className="text-2xl font-bold text-yellow-400">Pregunta sobre el video</h2>
+          <div className={`text-6xl ${meTocaVideo ? "animate-bounce" : ""}`}>{meTocaVideo ? "🎤" : "🎬"}</div>
+          <h2 className="text-2xl font-bold text-yellow-400">
+            {meTocaVideo ? "¡Te toca responder!" : "Pregunta sobre el video"}
+          </h2>
           <div className="bg-gray-900 border border-yellow-400/40 rounded-2xl px-6 py-5 max-w-sm w-full">
             <p className="text-white text-xl font-bold leading-snug">{CONFIG.reflexion.preguntaVideo}</p>
           </div>
-          <p className="text-gray-400">Responde en voz alta 🎙️</p>
+          {meTocaVideo ? (
+            <p className="text-yellow-400 font-bold text-lg">Responde en voz alta 🎙️</p>
+          ) : soc.preguntaPersonaNombre ? (
+            <p className="text-gray-400">
+              Escucha a <span className="text-white font-bold">{soc.preguntaPersonaNombre}</span>
+            </p>
+          ) : (
+            <p className="text-gray-500 text-sm">Elegiendo a alguien…</p>
+          )}
         </div>
       )
     }
