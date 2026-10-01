@@ -119,9 +119,9 @@ const PREFASES = {
     nombre: "Evaluación",
     subtitulo: "El micrófono viajero",
     instrucciones: [
-      "Se girará una ruleta para seleccionar quién responde",
       "5 preguntas de reflexión sobre la actividad",
-      "El seleccionado responde en voz alta",
+      "En 2 de ellas, una ruleta elige al azar quién responde en voz alta",
+      "Las demás se comentan abiertamente entre todos",
     ],
     color: "text-pink-400",
     border: "border-pink-400/30",

@@ -10,9 +10,13 @@ const PREGUNTAS_EVAL = [
   "Después de vivir esta experiencia, ¿qué idea o reflexión me llevo sobre la manera de enseñar y aprender en el contexto de La Universidad en el Campo?",
 ]
 
+// Solo estas 2 preguntas (por índice) usan la ruleta para elegir a alguien al
+// azar; las demás se muestran para que todo el grupo las comente abiertamente.
+const USA_RULETA = PREGUNTAS_EVAL.map((_, i) => i === 0 || i === 3)
+
 export function EvaluacionHost() {
   const [participantes, setParticipantes] = useState([])
-  const [fase, setFase] = useState("esperando") // "esperando"|"girando"|"seleccionado"|"fin"
+  const [fase, setFase] = useState("esperando") // "esperando"|"girando"|"seleccionado"|"discusion"|"fin"
   const [preguntaIdx, setPreguntaIdx] = useState(0)
   const [seleccionado, setSeleccionado] = useState(null)
   const [usados, setUsados] = useState([])
@@ -26,6 +30,23 @@ export function EvaluacionHost() {
     })
     return () => unsub()
   }, [])
+
+  // Al entrar a cada pregunta: si es de discusión abierta, se publica de una
+  // vez para todos; si usa ruleta, queda pendiente de que el anfitrión la gire.
+  useEffect(() => {
+    setSeleccionado(null)
+    if (USA_RULETA[preguntaIdx]) {
+      setFase("esperando")
+      set(ref(db, "sala/evaluacion_estado"), null)
+    } else {
+      setFase("discusion")
+      update(ref(db, "sala/evaluacion_estado"), {
+        tipo: "discusion",
+        preguntaIdx,
+        activo: true,
+      })
+    }
+  }, [preguntaIdx])
 
   function girarRuleta() {
     if (fase === "girando" || participantes.length === 0) return
@@ -72,6 +93,7 @@ export function EvaluacionHost() {
           setUsados(prev => [...prev, ganador.id])
           setFase("seleccionado")
           update(ref(db, "sala/evaluacion_estado"), {
+            tipo: "ruleta",
             seleccionadoId: ganador.id,
             seleccionadoNombre: ganador.nombre,
             preguntaIdx,
@@ -88,14 +110,13 @@ export function EvaluacionHost() {
   }
 
   async function siguientePregunta() {
-    await set(ref(db, "sala/evaluacion_estado"), null)
     if (preguntaIdx + 1 >= PREGUNTAS_EVAL.length) {
+      await set(ref(db, "sala/evaluacion_estado"), null)
       setFase("fin")
       await update(ref(db, "sala"), { fase: "fin" })
     } else {
+      // El efecto [preguntaIdx] publica la siguiente pregunta (ruleta o discusión)
       setPreguntaIdx(preguntaIdx + 1)
-      setSeleccionado(null)
-      setFase("esperando")
     }
   }
 
@@ -106,6 +127,38 @@ export function EvaluacionHost() {
         <div className="text-7xl">🎉</div>
         <h2 className="text-4xl font-bold text-yellow-400">¡Actividad finalizada!</h2>
         <p className="text-gray-400 text-xl">Gracias por participar</p>
+      </div>
+    )
+  }
+
+  // DISCUSIÓN ABIERTA — sin ruleta, la comenta todo el grupo
+  if (fase === "discusion") {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-8 px-10 py-12 text-center">
+        <p className="text-gray-500 text-sm uppercase tracking-widest">
+          Evaluación — Pregunta {preguntaIdx + 1} de {PREGUNTAS_EVAL.length}
+        </p>
+
+        <div className="flex flex-col items-center gap-3">
+          <div className="text-6xl">💬</div>
+          <h2 className="text-2xl font-bold text-yellow-400">Reflexión grupal</h2>
+        </div>
+
+        <div className="bg-gray-900 border border-yellow-400/30 rounded-3xl px-10 py-8 max-w-2xl w-full">
+          <p className="text-gray-400 text-xs mb-3 uppercase tracking-widest">Pregunta</p>
+          <p className="text-white text-2xl font-bold leading-relaxed">
+            {PREGUNTAS_EVAL[preguntaIdx]}
+          </p>
+        </div>
+
+        <p className="text-gray-500 text-sm">Comenten juntos — cualquiera puede responder 🗣️</p>
+
+        <button
+          onClick={siguientePregunta}
+          className="bg-gray-700 hover:bg-gray-600 text-white font-bold px-8 py-3 rounded-xl transition"
+        >
+          {preguntaIdx + 1 >= PREGUNTAS_EVAL.length ? "Finalizar actividad 🎉" : "Siguiente →"}
+        </button>
       </div>
     )
   }
@@ -198,6 +251,22 @@ export function EvaluacionPlayer({ userId, nombre }) {
   }, [])
 
   const meSeleccionaron = estado?.seleccionadoId === userId && estado?.activo
+
+  // DISCUSIÓN ABIERTA — la misma pantalla para todos, nadie queda señalado
+  if (estado?.tipo === "discusion" && estado?.activo) {
+    return (
+      <div className="h-full bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center">
+        <div className="text-5xl">💬</div>
+        <h2 className="text-2xl font-bold text-yellow-400">Reflexión grupal</h2>
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 max-w-sm w-full">
+          <p className="text-white text-lg font-medium leading-relaxed">
+            {PREGUNTAS_EVAL[estado?.preguntaIdx ?? 0]}
+          </p>
+        </div>
+        <p className="text-gray-500 text-sm">Participa en la conversación 🗣️</p>
+      </div>
+    )
+  }
 
   // ME SELECCIONARON — protagonista
   if (meSeleccionaron) {
