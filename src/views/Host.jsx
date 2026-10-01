@@ -43,8 +43,8 @@ export default function Host() {
     : []
 
   function handleReiniciar() {
-    if (window.confirm("¿Reiniciar la actividad? Esto borrará las respuestas y los participantes tendrán que volver a registrarse.")) {
-      iniciarSala()
+    if (window.confirm("¿Reiniciar la actividad? Esto borrará las respuestas y los participantes tendrán que volver a registrarse. Volverás a la primera diapositiva.")) {
+      resetSala()
     }
   }
 
